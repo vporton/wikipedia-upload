@@ -13,5 +13,11 @@ Algorithm on trigger:
    If fails, repeat upload.
    Set `Content-Encoding:`.
    Consider uncompressed `.zip` instead of `.tar`.
+   Use Record Management Controls in ZIP to store hashes.
+   To write `.zip` use `async_zip` because it supports extra fields.
 
 1. Ensure that Bee serves correctly with `Content-Encoding:`.
+
+TODO:
+
+- Handle symlinks.

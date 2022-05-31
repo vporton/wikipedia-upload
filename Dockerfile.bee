@@ -1,0 +1,19 @@
+FROM ubuntu:22.10
+
+RUN apt -y update
+RUN apt -y install wget git nodejs make
+
+RUN wget https://github.com/ethersphere/bee-clef/releases/download/v0.12.0/bee-clef_0.12.0_amd64.deb
+RUN dpkg -i bee-clef_0.12.0_amd64.deb
+RUN rm -f bee-clef_0.12.0_amd64.deb
+
+RUN git clone https://github.com/ethersphere/bee
+RUN cd bee
+RUN git checkout v1.6.0
+RUN make binary
+RUN cp dist/bee /usr/local/bin/bee
+RUN rm -rf bee
+
+COPY bee-config.yaml .
+
+CMD bee start --config bee-config.yaml
