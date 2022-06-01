@@ -1,4 +1,4 @@
-package scan_files
+package main
 
 import (
 	"fmt"
@@ -6,7 +6,8 @@ import (
 	"io"
 	"path/filepath"
 	"github.com/ethersphere/bee/pkg/swarm"
-	"./pkg/mydb"
+
+	"wikipedia_upload/mydb"
 )
 
 func main() {
@@ -34,6 +35,11 @@ func main() {
 			file_number += 1
 			return nil
 		})
+	if err != nil {
+		log.Println(err)
+		os.Exit(1)
+	}
+	err = db.saveMinFileNumberToUpload(0)
 	if err != nil {
 		log.Println(err)
 		os.Exit(1)
