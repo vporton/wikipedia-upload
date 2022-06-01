@@ -55,6 +55,7 @@ func main() {
 		// Acquire all of the tokens to wait for any remaining workers to finish.
 		if err := sem.Acquire(ctx, int64(maxWorkers)); err != nil {
 			log.Printf("Failed to acquire semaphore: %v", err)
+			os.Exit(1)
 		}
 	}
 }
