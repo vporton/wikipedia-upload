@@ -8,12 +8,20 @@ import (
 )
 
 func main() {
-	db := mydb.openDB(os.Args[1])
-	defer db.closeDB()
+	db, err := mydb.OpenDB(os.Args[1])
+	if err != nil {
+		log.Println(err)
+		os.Exit(1)
+	}
+	defer db.CloseDB()
 
-	file_number := db.getMinFileNumberToUpload()
+	file_number, err := db.GetMinFileNumberToUpload()
+	if err != nil {
+		log.Println(err)
+		os.Exit(1)
+	}
 	for {
-		err := db.readFileData(file_number)
+		data, err := db.ReadFileData(file_number)
 		if err == mydb.ErrKeyNotFound {
 			break
 		}
