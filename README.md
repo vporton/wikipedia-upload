@@ -8,16 +8,12 @@ Algorithm on trigger:
 
 1. Start Docker with Bee.
 
-1. Upload to Swarm created on-the-fly `.tar` with all files.
-   (Does .tar uploading need enhancment to be memory-efficient?)
-   If fails, repeat upload.
-   Set `Content-Encoding:`.
-   Consider uncompressed `.zip` instead of `.tar`.
-   Use Record Management Controls in ZIP to store hashes.
-   To write `.zip` use `async_zip` because it supports extra fields.
+1. Create a DB mapping number and bzzhash (calculated by Go) of file into its name.
+   Store the number of next file to be uploaded.
 
-1. Ensure that Bee serves correctly with `Content-Encoding:`.
+1. Upload to Swarm one-by-one file with all not yet uploaded files (bzz-raw, no manifest).
+   Calculate manifest accordingly https://ethereum.stackexchange.com/questions/83977/generate-directory-hash-without-upload-using-swarm-api
+   and upload it.
+   Symlinks will be uploaded with `Content-Type: symlink; charset=utf-8`.
 
-TODO:
-
-- Handle symlinks.
+1. Create `/bzz/links/brotli` endpoint.
