@@ -1,20 +1,22 @@
-package main
+package scan_files
 
 import (
 	"fmt"
-	"os"
 	"io"
+	"log"
+	"os"
 	"path/filepath"
+
 	"github.com/ethersphere/bee/pkg/swarm"
 
 	"files_tool/mydb"
 )
 
 func main() {
-	db := mydb.openDB(os.Args[1])
-	defer db.closeDB()
+	db := mydb.OpenDB(os.Args[1])
+	defer db.CloseDB()
 
-	const dir = os.Args[2];
+	const dir = os.Args[2]
 
 	file_number := 0
 	filepath.WalkDir(dir,
@@ -24,13 +26,17 @@ func main() {
 				os.Exit(1)
 			}
 			if !info.IsDir() {
-				relative_path := Rel(dir, path)
+				relative_path, err := filepath.Rel(dir, path)
+				if err != nil {
+					log.Println(err)
+					os.Exit(1)
+				}
 				hash, err := fileBZZHash(path)
 				if err != nil {
 					log.Println(err)
 					os.Exit(1)
 				}
-				db.saveFileData(FileData{hash: hash, uploaded: false, name: relative_path})
+				db.SaveFileData(mydb.FileData{hash: hash, uploaded: false, name: relative_path})
 			}
 			file_number += 1
 			return nil

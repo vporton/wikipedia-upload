@@ -1,11 +1,8 @@
-package upload
+package files_tool
 
 import (
-	"fmt"
+	"log"
 	"os"
-	"io"
-	"path/filepath"
-	"github.com/ethersphere/bee/pkg/swarm"
 
 	"files_tool/mydb"
 )
@@ -17,7 +14,7 @@ func main() {
 	file_number := db.getMinFileNumberToUpload()
 	for {
 		err := db.readFileData(file_number)
-		if err = mydb.ErrKeyNotFound {
+		if err == mydb.ErrKeyNotFound {
 			break
 		}
 		if err != nil {

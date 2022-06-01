@@ -4,14 +4,14 @@ import (
 	badger "github.com/dgraph-io/badger/v3"
 )
 
-struct FileData {
+type FileData struct {
 	hash [32]byte
 	uploaded bool
 	name string
 }
 
 func fileDataToBytes(data *FileData) []byte {
-	return append(data.hash, { byte(uploaded) }, []byte(name))
+	return append(data.hash, []byte{ byte(uploaded) }, []byte(name))
 }
 
 func bytesToFileData(bytes []byte) *FileData, error {
@@ -25,15 +25,15 @@ type DB badger.DB
 
 const ErrKeyNotFound = badger.ErrKeyNotFound
 
-func openDB(fileName string) DB, error {
+func OpenDB(fileName string) *DB, error {
 	db, err := badger.Open(badger.DefaultOptions(fileName))
 }
 
-func closeDB(db *DB) error {
+func(db *DB) CloseDB() error {
 	return db.Close()
 }
 
-func saveFileData(db DB, number int64, data *FileData) error {
+func(db *DB) SaveFileData(number int64, data *FileData) error {
 	return db.Update(func(txn *badger.Txn) error {
 		if badger.NewEntry([64]byte(number), fileDataToBytes(data)) = nil {
 			return errors.New("cannot set DB entry")
@@ -41,13 +41,13 @@ func saveFileData(db DB, number int64, data *FileData) error {
 	)
 }
 
-func readFileData(db DB, number int64) *FileData, error {
+func(db *DB) ReadFileData(number int64) *FileData, error {
 	return db.View(func(txn *badger.Txn) error {
 		item, err := txn.Get([]byte(number))
 	})
 }
 
-func saveMinFileNumberToUpload(db DB, number int64) error {
+func(db *DB) SaveMinFileNumberToUpload(number int64) error {
 	return db.Update(func(txn *badger.Txn) error {
 		if badger.NewEntry("m", [8]byte(number)) = nil {
 			return errors.New("cannot set min file number entry")
@@ -55,7 +55,7 @@ func saveMinFileNumberToUpload(db DB, number int64) error {
 	)
 }
 
-func getMinFileNumberToUpload(db DB, number int64) *FileData, error {
+func(db *DB) getMinFileNumberToUpload(number int64) *FileData, error {
 	return db.View(func(txn *badger.Txn) error {
 		item, err := txn.Get([]byte("m"))
 	})
