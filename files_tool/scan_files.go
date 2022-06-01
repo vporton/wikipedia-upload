@@ -3,6 +3,7 @@ package scan_files
 import (
 	"fmt"
 	"io"
+	"io/fs"
 	"log"
 	"os"
 	"path/filepath"
@@ -13,19 +14,23 @@ import (
 )
 
 func main() {
-	db := mydb.OpenDB(os.Args[1])
+	db, err := mydb.OpenDB(os.Args[1])
+	if err != nil {
+		log.Println(err)
+		os.Exit(1)
+	}
 	defer db.CloseDB()
 
-	const dir = os.Args[2]
+	dir := os.Args[2]
 
-	file_number := 0
+	file_number := int64(0)
 	filepath.WalkDir(dir,
-		func(path string, info os.FileInfo, err error) error {
+		func(path string, d fs.DirEntry, err error) error {
 			if err != nil {
 				log.Println(err)
 				os.Exit(1)
 			}
-			if !info.IsDir() {
+			if !d.IsDir() {
 				relative_path, err := filepath.Rel(dir, path)
 				if err != nil {
 					log.Println(err)
@@ -36,7 +41,7 @@ func main() {
 					log.Println(err)
 					os.Exit(1)
 				}
-				db.SaveFileData(mydb.FileData{hash: hash, uploaded: false, name: relative_path})
+				db.SaveFileData(file_number, &mydb.FileData{Hash: *(*[32]byte)(hash), Uploaded: false, Name: relative_path})
 			}
 			file_number += 1
 			return nil
@@ -45,7 +50,7 @@ func main() {
 		log.Println(err)
 		os.Exit(1)
 	}
-	err = db.saveMinFileNumberToUpload(0)
+	err = db.SaveMinFileNumberToUpload(0)
 	if err != nil {
 		log.Println(err)
 		os.Exit(1)
@@ -58,7 +63,7 @@ func fileBZZHash(path string) ([]byte, error) {
 		fmt.Println("Error opening file " + os.Args[1])
 		os.Exit(1)
 	}
-	stat, _ := f.LStat()
+	stat, _ := os.Lstat(path)
 	// chunker := storage.NewTreeChunker(storage.NewChunkerParams())
 	// return chunker.Split(f, stat.Size(), nil, nil, nil)
 
@@ -68,8 +73,13 @@ func fileBZZHash(path string) ([]byte, error) {
 	// FIXME: Is it correct code for Swarm hash?
 	hasher := swarm.NewHasher()
 	// _, err = hasher.Write([]byte("xxx")) // FIXME
-	if stat.IsLink() {
-		hasher.Write(os.Readlink(path))
+	if stat.Mode()&os.ModeSymlink != 0 {
+		link, err := os.Readlink(path)
+		if err != nil {
+			fmt.Println("Error opening file " + os.Args[1])
+			os.Exit(1)
+		}
+		hasher.Write([]byte(link))
 	} else {
 		io.Copy(hasher, f)
 	}
