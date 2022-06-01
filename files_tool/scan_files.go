@@ -14,6 +14,11 @@ import (
 )
 
 func main() {
+	if len(os.Args) != 3 {
+		log.Println("Usage: scan_files <DB-FILE> <DIR>")
+		os.Exit(1)
+	}
+
 	db, err := mydb.OpenDB(os.Args[1])
 	if err != nil {
 		log.Println(err)
