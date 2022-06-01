@@ -14,6 +14,6 @@ Algorithm on trigger:
    and upload it.
    Symlinks will be uploaded with `Content-Type: text/x-redirect; charset=utf-8`.
 
-1. Create `/bzz/links/brotli` endpoint supporting `text/x-redirect`.
+1. Create `/bzz/links` endpoint supporting `text/x-redirect`.
 
 1. Add `Content-Encoding: br` by a Nginx container.
