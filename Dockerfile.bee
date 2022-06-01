@@ -1,5 +1,7 @@
 FROM ubuntu:22.10
 
+ENV BEE_CLEF_CHAIN_ID=100
+
 RUN apt -y update
 RUN apt -y install wget git nodejs make
 
