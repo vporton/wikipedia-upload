@@ -75,7 +75,9 @@ func (db *DB) ReadFileData(number uint64) (*FileData, error) {
 
 func (db *DB) SaveMinFileNumberToUpload(number uint64) error {
 	return (*badger.DB)(db).Update(func(txn *badger.Txn) error {
-		if badger.NewEntry("m", [8]byte(number)) == nil {
+		b := make([]byte, 8)
+		binary.LittleEndian.PutUint64(b, number)
+		if badger.NewEntry([]byte("m"), b) == nil {
 			return errors.New("cannot set min file number entry")
 		}
 	})
