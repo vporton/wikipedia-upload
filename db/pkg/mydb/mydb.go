@@ -1,3 +1,5 @@
+package mydb
+
 import (
 	badger "github.com/dgraph-io/badger/v3"
 )

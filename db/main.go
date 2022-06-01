@@ -1,4 +1,4 @@
-package main
+package scan_files
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 	"io"
 	"path/filepath"
 	"github.com/ethersphere/bee/pkg/swarm"
-	mydb "./pkg/mydb"
+	"./pkg/mydb"
 )
 
 func main() {

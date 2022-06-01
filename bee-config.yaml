@@ -24,12 +24,12 @@ debug-api-enable: true
 full-node: false
 gateway-mode: false
 help: false
-mainnet: false
+mainnet: true
 nat-addr: ""
-network-id: "100"
+network-id: "1"
 p2p-addr: :1634
 p2p-ws-enable: true
-password: ""
+password: "xxx"
 password-file: ""
 payment-early-percent: 50
 payment-threshold: "100000000"
@@ -44,7 +44,6 @@ resync: false
 static-nodes: []
 swap-deployment-gas-price: ""
 swap-enable: true
-#swap-endpoint: https://rpc.ankr.com/gnosis
 swap-endpoint: wss://xdai.poanetwork.dev/wss
 swap-factory-address: ""
 swap-initial-deposit: "10000000000000000"
