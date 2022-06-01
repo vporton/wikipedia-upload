@@ -49,19 +49,24 @@ func (db *DB) CloseDB() error {
 
 func (db *DB) SaveFileData(number uint64, data *FileData) error {
 	return (*badger.DB)(db).Update(func(txn *badger.Txn) error {
-		if badger.NewEntry([64]byte(number), fileDataToBytes(data)) == nil {
+		b := make([]byte, 8)
+		binary.LittleEndian.PutUint64(b, number)
+		if badger.NewEntry(b, fileDataToBytes(data)) == nil {
 			return errors.New("cannot set DB entry")
 		}
+		return nil
 	})
 }
 
 func (db *DB) ReadFileData(number uint64) (*FileData, error) {
 	var item *badger.Item
-	err := (*badger.DB)(db).View(func(txn *badger.Txn) error {
+	var err error
+	err = (*badger.DB)(db).View(func(txn *badger.Txn) error {
 		b := make([]byte, 8)
 		binary.LittleEndian.PutUint64(b, number)
 
 		item, err = txn.Get(b)
+		return err
 	})
 	if err != nil {
 		return nil, err
@@ -69,6 +74,7 @@ func (db *DB) ReadFileData(number uint64) (*FileData, error) {
 	var bytes []byte
 	item.Value(func(val []byte) error {
 		bytes = val
+		return nil
 	})
 	return bytesToFileData(bytes)
 }
@@ -80,6 +86,7 @@ func (db *DB) SaveMinFileNumberToUpload(number uint64) error {
 		if badger.NewEntry([]byte("m"), b) == nil {
 			return errors.New("cannot set min file number entry")
 		}
+		return nil
 	})
 }
 
@@ -92,13 +99,9 @@ func (db *DB) GetMinFileNumberToUpload() (uint64, error) {
 		}
 		err = item.Value(func(val []byte) error {
 			bytes = val
-			if err != nil {
-				return err
-			}
+			return nil
 		})
-		if err != nil {
-			return err
-		}
+		return err // needed?
 	})
 	if err != nil {
 		return 0, err
