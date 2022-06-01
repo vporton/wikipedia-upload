@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"github.com/ethersphere/bee/pkg/swarm"
 
-	"wikipedia_upload/mydb"
+	"files_tool/mydb"
 )
 
 func main() {

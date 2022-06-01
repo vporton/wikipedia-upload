@@ -1,4 +1,4 @@
-module wikipedia_upload
+module files_tool
 
 go 1.17
 
