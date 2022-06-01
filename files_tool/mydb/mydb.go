@@ -64,6 +64,7 @@ func (db *DB) GetMinFileNumberToUpload() (*FileData, error) {
 		item.Value(func(val []byte) error {
 			bytes = val
 		})
-		return int64(bytes[]), err
+		bytes2 := (*[32]byte)(bytes)
+		return int64(*bytes2), err
 	})
 }
