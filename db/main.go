@@ -46,7 +46,7 @@ func fileBZZHash(path string) ([]byte, error) {
 		fmt.Println("Error opening file " + os.Args[1])
 		os.Exit(1)
 	}
-	// stat, _ := f.Stat()
+	stat, _ := f.LStat()
 	// chunker := storage.NewTreeChunker(storage.NewChunkerParams())
 	// return chunker.Split(f, stat.Size(), nil, nil, nil)
 
@@ -56,7 +56,11 @@ func fileBZZHash(path string) ([]byte, error) {
 	// FIXME: Is it correct code for Swarm hash?
 	hasher := swarm.NewHasher()
 	// _, err = hasher.Write([]byte("xxx")) // FIXME
-	io.Copy(hasher, f)
+	if stat.IsLink() {
+		hasher.Write(os.Readlink(path))
+	} else {
+		io.Copy(hasher, f)
+	}
 	addr := hasher.Sum(nil)
 
 	return addr, err
