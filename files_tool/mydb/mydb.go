@@ -14,14 +14,21 @@ type FileData struct {
 }
 
 func fileDataToBytes(data *FileData) []byte {
-	return append(data.Hash, []byte{byte(Uploaded)}, []byte(Name))
+	uploaded := byte(0)
+	if data.Uploaded {
+		uploaded = 1
+	}
+	var result []byte
+	result = append(data.Hash[:], uploaded)
+	result = append(result, []byte(data.Name)...)
+	return result
 }
 
 func bytesToFileData(bytes []byte) (*FileData, error) {
 	if len(bytes) <= 33 {
 		return nil, errors.New("too short record")
 	}
-	&FileData{Hash: bytes[:32], Uploaded: bytes[32] != 0, Name: string(bytes[33:])}
+	return &FileData{Hash: *(*[32]byte)(bytes[:32]), Uploaded: bytes[32] != 0, Name: string(bytes[33:])}, nil
 }
 
 type DB badger.DB
@@ -29,7 +36,11 @@ type DB badger.DB
 var ErrKeyNotFound = badger.ErrKeyNotFound
 
 func OpenDB(fileName string) (*DB, error) {
-	return badger.Open(badger.DefaultOptions(fileName))
+	db, err := badger.Open(badger.DefaultOptions(fileName))
+	if err != nil {
+		return nil, err
+	}
+	return (*DB)(db), nil
 }
 
 func (db *DB) CloseDB() error {
@@ -93,5 +104,5 @@ func (db *DB) GetMinFileNumberToUpload() (uint64, error) {
 	if len(bytes) != 8 {
 		return 0, errors.New("wrong size of the current file number")
 	}
-	return binary.BigEndian.Uint64(bytes), err
+	return binary.LittleEndian.Uint64(bytes), err
 }
