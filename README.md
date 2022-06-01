@@ -6,8 +6,8 @@ Algorithm on trigger:
 
 1. Start Docker with Bee.
 
-1. Create a DB mapping number and bzzhash (calculated by Go) of file into its name.
-   Store for each file whether it was uploaded and minimal number of not yet uploaded file.
+1. Create a DB mapping number of file into its bzzhash (calculated by Go) and name.
+   Store also for each file whether it was uploaded and minimal number of not yet uploaded file.
 
 1. Upload to Swarm one-by-one file encoding by brotli all not yet uploaded files (bzz-raw, no manifest).
    Calculate manifest accordingly https://ethereum.stackexchange.com/questions/83977/generate-directory-hash-without-upload-using-swarm-api

@@ -4,10 +4,40 @@ import (
 	"fmt"
 	"os"
 	"io"
+	"path/filepath"
 	"github.com/ethersphere/bee/pkg/swarm"
+	mydb "./pkg/mydb"
 )
 
 func main() {
+	db := mydb.openDB(os.Args[1])
+	defer db.closeDB()
+
+	const dir = os.Args[2];
+
+	file_number := 0
+	filepath.WalkDir(dir,
+		func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				log.Println(err)
+				os.Exit(1)
+			}
+			if !info.IsDir() {
+				relative_path := Rel(dir, path)
+				hash, err := fileBZZHash(path)
+				if err != nil {
+					log.Println(err)
+					os.Exit(1)
+				}
+				db.saveFileData(FileData{hash: hash, uploaded: false, name: relative_path})
+			}
+			file_number += 1
+			return nil
+		})
+	if err != nil {
+		log.Println(err)
+		os.Exit(1)
+	}
 }
 
 func fileBZZHash(path string) ([]byte, error) {
