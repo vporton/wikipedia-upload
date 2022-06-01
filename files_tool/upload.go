@@ -5,6 +5,8 @@ import (
 	"os"
 
 	"files_tool/mydb"
+
+	"golang.org/x/sync/semaphore"
 )
 
 func main() {
@@ -20,8 +22,10 @@ func main() {
 		log.Println(err)
 		os.Exit(1)
 	}
+	const maxWorkers = 5 // TODO: Make configurable
+	sem := semaphore.NewWeighted(maxWorkers)
 	for {
-		data, err := db.ReadFileData(file_number)
+		fileData, err := db.ReadFileData(file_number)
 		if err == mydb.ErrKeyNotFound {
 			break
 		}
@@ -29,6 +33,33 @@ func main() {
 			log.Println(err)
 			os.Exit(1)
 		}
-		// TODO
+
+		if err := sem.Acquire(ctx, 1); err != nil {
+			log.Printf("Failed to acquire semaphore: %v", err)
+			break
+		}
+
+		go func(i int) {
+			defer sem.Release(1)
+			hash, err = uploadFile(data)
+			if err != nil {
+				log.Println(err)
+				os.Exit(1)
+			}
+			if hash != fileData.Hash {
+				log.Println("File %s hash mismatch", fileData.Name)
+				os.Exit(1)
+			}
+		}()
+
+		// Acquire all of the tokens to wait for any remaining workers to finish.
+		if err := sem.Acquire(ctx, int64(maxWorkers)); err != nil {
+			log.Printf("Failed to acquire semaphore: %v", err)
+		}
 	}
+}
+
+// Returns the hash
+func uploadFile(fileData *FileData) ([32]byte, error) {
+
 }
