@@ -23,7 +23,7 @@ func main() {
 
 	dir := os.Args[2]
 
-	file_number := int64(0)
+	file_number := uint64(0)
 	filepath.WalkDir(dir,
 		func(path string, d fs.DirEntry, err error) error {
 			if err != nil {

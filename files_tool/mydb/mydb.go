@@ -1,6 +1,7 @@
 package mydb
 
 import (
+	"encoding/binary"
 	"errors"
 
 	badger "github.com/dgraph-io/badger/v3"
@@ -25,31 +26,43 @@ func bytesToFileData(bytes []byte) (*FileData, error) {
 
 type DB badger.DB
 
-const ErrKeyNotFound = badger.ErrKeyNotFound
+var ErrKeyNotFound = badger.ErrKeyNotFound
 
 func OpenDB(fileName string) (*DB, error) {
-	db, err := badger.Open(badger.DefaultOptions(fileName))
+	return badger.Open(badger.DefaultOptions(fileName))
 }
 
 func (db *DB) CloseDB() error {
-	return db.Close()
+	return (*badger.DB)(db).Close()
 }
 
-func (db *DB) SaveFileData(number int64, data *FileData) error {
-	return db.Update(func(txn *badger.Txn) error {
+func (db *DB) SaveFileData(number uint64, data *FileData) error {
+	return (*badger.DB)(db).Update(func(txn *badger.Txn) error {
 		if badger.NewEntry([64]byte(number), fileDataToBytes(data)) == nil {
 			return errors.New("cannot set DB entry")
 		}
 	})
 }
 
-func (db *DB) ReadFileData(number int64) (*FileData, error) {
-	return db.View(func(txn *badger.Txn) error {
-		item, err := txn.Get([]byte(number))
+func (db *DB) ReadFileData(number uint64) (*FileData, error) {
+	var item *badger.Item
+	err := (*badger.DB)(db).View(func(txn *badger.Txn) error {
+		b := make([]byte, 8)
+		binary.LittleEndian.PutUint64(b, number)
+
+		item, err = txn.Get(b)
 	})
+	if err != nil {
+		return nil, err
+	}
+	var bytes []byte
+	item.Value(func(val []byte) error {
+		bytes = val
+	})
+	return bytesToFileData(bytes)
 }
 
-func (db *DB) SaveMinFileNumberToUpload(number int64) error {
+func (db *DB) SaveMinFileNumberToUpload(number uint64) error {
 	return (*badger.DB)(db).Update(func(txn *badger.Txn) error {
 		if badger.NewEntry("m", [8]byte(number)) == nil {
 			return errors.New("cannot set min file number entry")
@@ -57,14 +70,28 @@ func (db *DB) SaveMinFileNumberToUpload(number int64) error {
 	})
 }
 
-func (db *DB) GetMinFileNumberToUpload() (*FileData, error) {
-	return db.View(func(txn *badger.Txn) error {
+func (db *DB) GetMinFileNumberToUpload() (uint64, error) {
+	var bytes []byte
+	err := (*badger.DB)(db).View(func(txn *badger.Txn) error {
 		item, err := txn.Get([]byte("m"))
-		var bytes []byte
-		item.Value(func(val []byte) error {
+		if err != nil {
+			return err
+		}
+		err = item.Value(func(val []byte) error {
 			bytes = val
+			if err != nil {
+				return err
+			}
 		})
-		bytes2 := (*[32]byte)(bytes)
-		return int64(*bytes2), err
+		if err != nil {
+			return err
+		}
 	})
+	if err != nil {
+		return 0, err
+	}
+	if len(bytes) != 8 {
+		return 0, errors.New("wrong size of the current file number")
+	}
+	return binary.BigEndian.Uint64(bytes), err
 }
