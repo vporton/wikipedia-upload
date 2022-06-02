@@ -34,7 +34,6 @@ func main() {
 			os.Exit(1)
 		}
 
-		// FIXME: Acquire a semaphore on finishing download, not on start, to handle delay in finality.
 		if err := sem.Acquire(ctx, 1); err != nil {
 			log.Printf("Failed to acquire semaphore: %v", err)
 			break

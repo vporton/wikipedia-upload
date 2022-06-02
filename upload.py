@@ -50,7 +50,7 @@ with TemporaryDirectory as tmpdir:
         depth = 20
         amount = cost_in_bzz * (10**16) / (2**depth)
         res = requests.post(f"http://localhost:1635/stamps/{amount}/{depth}")
-        batch_id = res.json()["batchID"]
+        batch_id = res.json()["batchID"]  # FIXME: batch ID may be usable not immediately
 
     if not args.dont_scan:
         pass # TODO: scan_files
