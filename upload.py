@@ -1,6 +1,7 @@
 #!/bin/env python3
 
 import json, sys, os, subprocess, requests
+from tempfile import TemporaryDirectory
 from argparse import ArgumentParser
 
 parser = ArgumentParser(description="Upload files to Swarm")

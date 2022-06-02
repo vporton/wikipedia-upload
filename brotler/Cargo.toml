@@ -1,0 +1,12 @@
+[package]
+name = "brotler"
+version = "0.1.0"
+description = "Compress all files in a directory and subdirs with Brotli (without changing file names)"
+authors = ["Victor Porton"]
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+walkdir = "2.3.2"
+brotli = "3.3.4"
