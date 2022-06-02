@@ -33,27 +33,30 @@ zim_url = args.zimurl
 keepalive_seconds = args.keepalive_seconds
 zim_file = args.zim_file
 
-with TemporaryDirectory as tmpdir:
+def prepare_files(output_dir):
     if zim_url:
-        os.system(f"wget -O {tmpdir}/input.zim \"{zim_url}\"")
-        zim_file = f"{tmpdir}/input.zim"
+        os.system(f"wget -O {output_dir}/input.zim \"{zim_url}\"")
+        zim_file = f"{output_dir}/input.zim"
 
     os.system(f"docker build -t zim-tools -f Dockerfile.zim-tools .")
-    zimtools = subprocess.check_output(f"docker run -d --name zimdump zim-tools --mount \"type=volume,src={tmpdir},dst=/tmp/workdir\"")
+    zimtools = subprocess.check_output(f"docker run -d --name zimdump zim-tools --mount \"type=volume,src={output_dir},dst=/tmp/workdir\"")
     print("Starting zimdump extraction...")
     # TODO: Fix https://github.com/openzim/zim-tools/issues/303 and make Bee understand redirects, then add `--redirect` here:
-    os.system(f"docker exec zimtools /usr/local/bin/zimdump dump --dir=/tmp/workdir/out {tmpdir}/input.zim")
+    os.system(f"docker exec zimtools /usr/local/bin/zimdump dump --dir=/tmp/workdir/out {output_dir}/input.zim")
     os.system(f"docker rm {zimtools}")
-    os.system(f"rm -rf {tmpdir}/out/X")  # Remove useless search indexes.
+    os.system(f"rm -rf {output_dir}/out/X")  # Remove useless search indexes.
 
-    os.system(f"cp index.html error.html {tmpdir}/out/")
-    os.system(f"cd {tmpdir}/out && wget https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css")
+    os.system(f"cp index.html error.html {output_dir}/out/")
+    os.system(f"cd {output_dir}/out && wget https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css")
 
     os.system(f"docker build -t brotler -f Dockerfile.brotler .")
-    brotler = subprocess.check_output(f"docker run -d --name brotler brotler --mount \"type=volume,src={tmpdir},dst=/tmp/workdir\"")
+    brotler = subprocess.check_output(f"docker run -d --name brotler brotler --mount \"type=volume,src={output_dir},dst=/tmp/workdir\"")
     print("Starting brotler...")
     os.system(f"docker exec brotler /root/brotler/target/release/brotler /tmp/workdir/out")
     os.system(f"docker rm {brotler}")
+
+with TemporaryDirectory as tmpdir:
+    prepare_files(tmpdir)
 
     if args.batch_id is None:
         price_in_bzz_per_byte_second = FIXME
@@ -71,8 +74,8 @@ with TemporaryDirectory as tmpdir:
     process = subprocess.Popen(f"tar -C {tmpdir}/out -cf .", stdout=subprocess.PIPE)
     res = requests.post("http://localhost:1633/bzz", data=tar, headers={
         "Content-Type": "application/x-tar",
-        "Swarm-Index-Document": "index.html",  # FIXME
-        "Swarm-Error-Document": "error.html",  # FIXME
+        "Swarm-Index-Document": "index.html",
+        "Swarm-Error-Document": "error.html",
         "Swarm-Collection": "true",
         "Swarm-Postage-Batch-Id": batch_id,
         "Swarm-Tag": tag,
