@@ -9,4 +9,5 @@ edition = "2021"
 
 [dependencies]
 walkdir = "2.3.2"
-brotli = "3.3.4"
+brotlic = "0.7.0"
+tempfile = "3.3.0"
