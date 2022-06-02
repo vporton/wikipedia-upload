@@ -46,6 +46,9 @@ with TemporaryDirectory as tmpdir:
     os.system(f"docker rm {zimtools}")
     os.system(f"rm -rf {tmpdir}/out/X")  # Remove useless search indexes.
 
+    os.system(f"cp index.html error.html {tmpdir}/out/")
+    os.system(f"cd {tmpdir}/out && wget https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css")
+
     os.system(f"docker build -t brotler -f Dockerfile.brotler .")
     brotler = subprocess.check_output(f"docker run -d --name brotler brotler --mount \"type=volume,src={tmpdir},dst=/tmp/workdir\"")
     print("Starting brotler...")
