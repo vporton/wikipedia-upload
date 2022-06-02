@@ -4,7 +4,7 @@ Algorithm on trigger:
 
 1. Extract ("zimdump dump") it by Docker image with zim-tools.
 
-1. (TODO) Brotli all files.
+1. Brotli all files.
 
 1. Start Docker with Bee.
 
