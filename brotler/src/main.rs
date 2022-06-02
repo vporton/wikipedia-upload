@@ -1,6 +1,6 @@
 use std::{env, process};
 use std::fmt::{Display, Formatter};
-use std::fs::{File, rename};
+use std::fs::File;
 use std::io::copy;
 use std::path::Path;
 use brotlic::{BrotliEncoderOptions, CompressorWriter, Quality, SetParameterError, WindowSize};
@@ -57,11 +57,13 @@ fn almost_main() -> Result<(), MyError> {
     for entry in WalkDir::new(Path::new(&env::args().nth(1).unwrap()))
         .sort_by_file_name() // keep the order deterministic, because we overwrite files
         .into_iter()
-        .filter_entry(|e| !e.path_is_symlink())
+        .filter_entry(|entry| !entry.path_is_symlink())
     {
         let entry = entry?;
-        println!("{}", entry.path().to_str().unwrap());
-        compress_file(&entry.path())?;
+        if !entry.file_type().is_dir() {
+            println!("{}", entry.path().to_str().unwrap());
+            compress_file(&entry.path())?;
+        }
     }
 
     Ok(())
@@ -76,12 +78,14 @@ fn compress_file(path: &Path) -> Result<(), MyError> {
 
     let encoder = BrotliEncoderOptions::new()
         .quality(Quality::best())
-        .window_size(WindowSize::new(24)?)
+        .window_size(WindowSize::new(24).unwrap())
         .build()?;
 
     let mut output_compressed = CompressorWriter::with_encoder(encoder, output);
 
     copy(&mut input, &mut output_compressed)?;
-    rename(output_path, path)?;
+    drop(output_compressed);
+    // rename(output_path, path)?; // /tmp is on another filesystem
+    std::fs::copy(output_path, path)?;
     Ok(())
 }

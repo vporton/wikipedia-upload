@@ -68,10 +68,8 @@ def prepare_files(output_dir):
         if not args.no_brotli:
             os.system(f"docker build -t brotler -f Dockerfile.brotler .")
             print("Starting brotler...")
-            subprocess.check_output(
-                f"docker run --name brotler brotler -v \"{abspath(output_dir)}:/volume\""
-                    f" /root/brotler/target/release/brotler /volume",
-                shell=True)
+            os.system(f"docker run --name brotler -v \"{abspath(output_dir)}:/volume\" brotler" \
+                f" /root/brotler/target/release/brotler /volume")
             os.system(f"docker rm -f brotler")
             os.system(f"sudo chown -R `id -u`:`id -g` {output_dir}")  # hack
 
