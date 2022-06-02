@@ -69,8 +69,8 @@ with TemporaryDirectory as tmpdir:
     process = subprocess.Popen(f"tar -C {tmpdir}/out -cf .", stdout=subprocess.PIPE)
     res = requests.post("http://localhost:1633/bzz", data=tar, headers={
         "Content-Type": "application/x-tar",
-        "Swarm-Index-Document": "index.html",
-        "Swarm-Error-Document": "error.html",
+        "Swarm-Index-Document": "index.html",  # FIXME
+        "Swarm-Error-Document": "error.html",  # FIXME
         "Swarm-Collection": "true",
         "Swarm-Postage-Batch-Id": batch_id,
         "Swarm-Tag": tag,
