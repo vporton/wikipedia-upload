@@ -1,6 +1,6 @@
 #!/bin/env python3
 
-import json, sys, os, subprocess, requests
+import sys, os, subprocess, requests
 from tempfile import TemporaryDirectory
 from argparse import ArgumentParser
 
