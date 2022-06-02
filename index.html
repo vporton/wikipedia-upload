@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <title>Wikipedia on Swarm</title>
+    <script>
+        function openArticle(event) {
+            document.getElementById('frame').src = 'A/' + encodeURIComponent(document.getElementById('entry').value);
+            event.preventDefault()
+        }
+    </script>
+  </head>
+  <body>
+    <h1>Wikipedia on Swarm</h1>
+    <div class="container">
+        <div class="row">
+            <div class="col">
+                <form action="#" onsubmit="openArticle(event)">
+                    <p style="display: flex"><input type="text" id="entry" style="width: 100%"/>
+                        <span>&nbsp;</span>
+                        <input type="submit" value="Open article"/></p>
+                </form>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <iframe src="about:blank" id="frame" style="width:100%"></iframe>
+            </div>
+        </div>
+    </div>
+  </body>
+</html>
