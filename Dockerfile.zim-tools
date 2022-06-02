@@ -6,9 +6,12 @@ RUN apt -y install wget pkgconf meson ninja-build libzim-dev cmake \
 
 RUN wget https://download.openzim.org/release/zim-tools/zim-tools-3.1.1.tar.xz
 RUN tar xf zim-tools-3.1.1.tar.xz
-WORKDIR zim-tools-3.1.1/
+WORKDIR zim-tools-3.1.1
 RUN meson . build
 RUN ninja -C build
 RUN ninja -C build install
 WORKDIR ..
 RUN rm -rf zim-tools
+
+RUN mkdir /in /out
+VOLUME /in /out
