@@ -3,7 +3,7 @@ use std::fmt::{Display, Formatter};
 use std::fs::{File, rename};
 use std::io::copy;
 use std::path::Path;
-use brotlic::CompressorWriter;
+use brotlic::{BrotliEncoderOptions, CompressorWriter, Quality, SetParameterError, WindowSize};
 use tempfile::{NamedTempFile, TempPath};
 use walkdir::WalkDir;
 
@@ -11,6 +11,7 @@ use walkdir::WalkDir;
 enum MyError {
     IO(std::io::Error),
     WalkDir(walkdir::Error),
+    SetParameter(SetParameterError),
 }
 
 impl Display for MyError {
@@ -18,6 +19,7 @@ impl Display for MyError {
         match self {
             Self::IO(err) => write!(f, "I/O: {err}"),
             Self::WalkDir(err) => write!(f, "Walking dir: {err}"),
+            Self::SetParameter(err) => write!(f, "Setting parameter: {err}"),
         }
     }
 }
@@ -31,6 +33,12 @@ impl From<walkdir::Error> for MyError {
 impl From<std::io::Error> for MyError {
     fn from(value: std::io::Error) -> Self {
         Self::IO(value)
+    }
+}
+
+impl From<SetParameterError> for MyError {
+    fn from(value: SetParameterError) -> Self {
+        Self::SetParameter(value)
     }
 }
 
@@ -64,7 +72,14 @@ fn compress_file(path: &Path) -> Result<(), MyError> {
     let output_path: TempPath = output_file.into_temp_path();
     let output_path: &Path = output_path.as_ref();
     let output = File::create(output_path)?; // compressed text output file
-    let mut output_compressed = CompressorWriter::new(output);
+
+    let encoder = BrotliEncoderOptions::new()
+        .quality(Quality::best())
+        .window_size(WindowSize::new(24)?)
+        .build()?;
+
+    let mut output_compressed = CompressorWriter::with_encoder(encoder, output);
+
     copy(&mut input, &mut output_compressed)?;
     rename(output_path, path)?;
     Ok(())
