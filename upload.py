@@ -10,7 +10,6 @@ parser.add_argument("-u", "--zim-url", dest="zim_file", help="ZIM URL to downloa
 parser.add_argument("-s", "--keepalive-seconds", dest="keepalive_seconds",
                     help="keep swarm alive for at least about this", metavar="int")
 parser.add_argument("-b", "--batch-id", dest="batch_id", help="use batchID to upload")
-parser.add_argument("-S", "--dont-scan", dest="dont_scan", help="use batchID to upload", metavar="bool")
 
 args = parser.parse_args()
 
