@@ -40,6 +40,7 @@ with TemporaryDirectory as tmpdir:
 
     os.system(f"docker build -t zim-tools -f Dockerfile.zim-tools .")
     zimtools = subprocess.check_output(f"docker run -d --name zimdump zim-tools --mount \"type=volume,src={tmpdir},dst=/tmp/workdir\"")
+    print("Starting zimdump extraction...")
     os.system(f"docker exec zimtools /usr/local/bin/zimdump dump --dir=/tmp/workdir/out --redirect {tmpdir}/input.zim")
     os.system(f"docker rm {zimtools}")
 
@@ -52,7 +53,25 @@ with TemporaryDirectory as tmpdir:
         res = requests.post(f"http://localhost:1635/stamps/{amount}/{depth}")
         batch_id = res.json()["batchID"]  # FIXME: batch ID may be usable not immediately
 
-    if not args.dont_scan:
-        pass # TODO: scan_files
+    res = requests.post("http://localhost:1633/tags")
+    tag = res.json()["uid"]
 
-    os.system("go run ")
+    print("Starting TAR upload...")
+    process = subprocess.Popen(f"tar -C {tmpdir}/out -cf .", stdout=subprocess.PIPE)
+    res = requests.post("http://localhost:1633/bzz", data=tar, headers={
+        "Content-Type": "application/x-tar",
+        "Swarm-Index-Document": "index.html",
+        "Swarm-Error-Document": "error.html",
+        "Swarm-Collection": "true",
+        "Swarm-Postage-Batch-Id": batch_id,
+        "Swarm-Tag": tag,
+    })
+
+    while True:
+        res = requests.get(f"http://localhost:1633/tags/{tag}")
+        total = res.json()['total']
+        processed = res.json()['processed']
+        synced = res.json()['synced']
+        print(f"fotal={total} processed={processed} synced={synced}")
+        if synced == total:
+            break
