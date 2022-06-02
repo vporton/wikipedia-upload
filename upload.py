@@ -6,34 +6,28 @@ import sys, os, subprocess, requests
 from tempfile import TemporaryDirectory
 import argparse
 
-parser = argparse.ArgumentParser(description="Upload files to Swarm")
-parser.add_argument("-f", "--zim-file", dest="zim_file", help="ZIM file")
-parser.add_argument("-u", "--zim-url", dest="zim_url", help="ZIM URL to download")
-parser.add_argument("-s", "--keepalive-seconds", dest="keepalive_seconds",
-                    help="keep swarm alive for at least about this", metavar="int")
-parser.add_argument("-b", "--batch-id", dest="batch_id", help="use batchID to upload")
-parser.add_argument("-B", "--no-brotli", dest="no_brotli", help="don't compress files", action=argparse.BooleanOptionalAction)
-parser.add_argument("-d", "--output-dir", dest="output_dir", help="output to directory instead of uploading", metavar="str")
+parser = argparse.ArgumentParser(description="Extract ZIM archive and/or upload files to Swarm")
+subparsers = parser.add_subparsers(dest='command', help="the operation to perform")
+group = parser.add_mutually_exclusive_group(required=True)
+group.add_argument("-f", "--zim-file", dest="zim_file", help="ZIM file for extraction")
+group.add_argument("-u", "--zim-url", dest="zim_url", help="ZIM URL to download")
+group.add_argument("-i", "--input-dir", dest="input_dir", help="input directory for upload to Swarm", metavar="DIR")
+parser.add_argument("-B", "--brotli", dest="brotli", help="compress files with Brotli (without change of extensions)", action=argparse.BooleanOptionalAction)
+parser_extract = subparsers.add_parser('extract', help="extract from ZIM")
+parser_extract.add_argument("-o", "--output-dir", dest="output_dir", help="output directory", metavar="DIR")
+parser_upload = subparsers.add_parser('upload', help="upload to Swarm (after extraction if ZIM file specified)")
+group = parser_upload.add_mutually_exclusive_group(required=True)
+group.add_argument("-s", "--keepalive-seconds", dest="keepalive_seconds",
+                   help="keep swarm alive for at least about this", metavar="SECONDS")
+group.add_argument("-b", "--batch-id", dest="batch_id", help="use batch ID to upload")
 
 args = parser.parse_args()
 
+if args.command == 'extract' and args.input_dir is not None:
+    sys.stderr.write("Incompatible options: cannot extract from directory.")
+    os.exit(1)
+
 no_upload = args.output_dir is not None
-
-if args.keepalive_seconds is not None and args.batch_id is not None:
-    sys.stderr.write("Can't specify both --keepalive-seconds and --batch-id")
-    os.exit(1)
-
-if not no_upload and args.keepalive_seconds is None and args.batch_id is None:
-    sys.stderr.write("Need to specify --keepalive-seconds or --batch-id")
-    os.exit(1)
-
-if args.zim_file is not None and args.zim_url is not None:
-    sys.stderr.write("Can't specify both --zim-file and --zim-url")
-    os.exit(1)
-
-if args.zim_file is None and args.zim_url is None:
-    sys.stderr.write("Need to specify --zim-file or --zim-url")
-    os.exit(1)
 
 zim_url = args.zim_url
 keepalive_seconds = args.keepalive_seconds
@@ -65,7 +59,7 @@ def prepare_files(output_dir):
         os.system(f"cp index.html error.html {output_dir}")
         # os.system(f"cd {output_dir} && wget https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css")
 
-        if not args.no_brotli:
+        if args.brotli:
             os.system(f"docker build -t brotler -f Dockerfile.brotler .")
             print("Starting brotler...")
             os.system(f"docker run --name brotler -v \"{abspath(output_dir)}:/volume\" brotler" \
