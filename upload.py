@@ -10,6 +10,8 @@ parser.add_argument("-u", "--zim-url", dest="zim_file", help="ZIM URL to downloa
 parser.add_argument("-s", "--keepalive-seconds", dest="keepalive_seconds",
                     help="keep swarm alive for at least about this", metavar="int")
 parser.add_argument("-b", "--batch-id", dest="batch_id", help="use batchID to upload")
+parser.add_argument("-B", "--no-brotli", dest="no_brotli", help="don't compress files", metavar="bool")
+parser.add_argument("-d", "--output-dir", dest="output_dir", help="output to directory instead of uploading", metavar="str")
 
 args = parser.parse_args()
 
@@ -49,43 +51,50 @@ def prepare_files(output_dir):
     os.system(f"cp index.html error.html {output_dir}/out/")
     os.system(f"cd {output_dir}/out && wget https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css")
 
-    os.system(f"docker build -t brotler -f Dockerfile.brotler .")
-    brotler = subprocess.check_output(f"docker run -d --name brotler brotler --mount \"type=volume,src={output_dir},dst=/tmp/workdir\"")
-    print("Starting brotler...")
-    os.system(f"docker exec brotler /root/brotler/target/release/brotler /tmp/workdir/out")
-    os.system(f"docker rm {brotler}")
+    if not args.no_brotli:
+        os.system(f"docker build -t brotler -f Dockerfile.brotler .")
+        brotler = subprocess.check_output(f"docker run -d --name brotler brotler --mount \"type=volume,src={output_dir},dst=/tmp/workdir\"")
+        print("Starting brotler...")
+        os.system(f"docker exec brotler /root/brotler/target/release/brotler /tmp/workdir/out")
+        os.system(f"docker rm {brotler}")
 
-with TemporaryDirectory as tmpdir:
-    prepare_files(tmpdir)
+def full_upload():
+    with TemporaryDirectory as tmpdir:
+        prepare_files(tmpdir)
 
-    if args.batch_id is None:
-        price_in_bzz_per_byte_second = FIXME
-        total_size_in_bytes = int( subprocess.check_output(f"du -sb {tmpdir}/out | awk '{print \$1}'") )
-        cost_in_bzz = price_in_bzz_per_byte_second * total_size_in_bytes * keepalive_seconds
-        depth = 20
-        amount = cost_in_bzz * (10**16) / (2**depth)
-        res = requests.post(f"http://localhost:1635/stamps/{amount}/{depth}")
-        batch_id = res.json()["batchID"]  # FIXME: batch ID may be usable not immediately
+        if args.batch_id is None:
+            price_in_bzz_per_byte_second = FIXME
+            total_size_in_bytes = int( subprocess.check_output(f"du -sb {tmpdir}/out | awk '{print \$1}'") )
+            cost_in_bzz = price_in_bzz_per_byte_second * total_size_in_bytes * keepalive_seconds
+            depth = 20
+            amount = cost_in_bzz * (10**16) / (2**depth)
+            res = requests.post(f"http://localhost:1635/stamps/{amount}/{depth}")
+            batch_id = res.json()["batchID"]  # FIXME: batch ID may be usable not immediately
 
-    res = requests.post("http://localhost:1633/tags")
-    tag = res.json()["uid"]
+        res = requests.post("http://localhost:1633/tags")
+        tag = res.json()["uid"]
 
-    print("Starting TAR upload...")
-    process = subprocess.Popen(f"tar -C {tmpdir}/out -cf .", stdout=subprocess.PIPE)
-    res = requests.post("http://localhost:1633/bzz", data=tar, headers={
-        "Content-Type": "application/x-tar",
-        "Swarm-Index-Document": "index.html",
-        "Swarm-Error-Document": "error.html",
-        "Swarm-Collection": "true",
-        "Swarm-Postage-Batch-Id": batch_id,
-        "Swarm-Tag": tag,
-    })
+        print("Starting TAR upload...")
+        process = subprocess.Popen(f"tar -C {tmpdir}/out -cf .", stdout=subprocess.PIPE)
+        res = requests.post("http://localhost:1633/bzz", data=tar, headers={
+            "Content-Type": "application/x-tar",
+            "Swarm-Index-Document": "index.html",
+            "Swarm-Error-Document": "error.html",
+            "Swarm-Collection": "true",
+            "Swarm-Postage-Batch-Id": batch_id,
+            "Swarm-Tag": tag,
+        })
 
-    while True:
-        res = requests.get(f"http://localhost:1633/tags/{tag}")
-        total = res.json()['total']
-        processed = res.json()['processed']
-        synced = res.json()['synced']
-        print(f"fotal={total} processed={processed} synced={synced}")
-        if synced == total:
-            break
+        while True:
+            res = requests.get(f"http://localhost:1633/tags/{tag}")
+            total = res.json()['total']
+            processed = res.json()['processed']
+            synced = res.json()['synced']
+            print(f"fotal={total} processed={processed} synced={synced}")
+            if synced == total:
+                break
+
+if args.output_dir is not None:
+    prepare_files(args.output_dir)
+else:
+    full_upload()
