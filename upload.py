@@ -42,7 +42,8 @@ with TemporaryDirectory as tmpdir:
     os.system(f"docker build -t zim-tools -f Dockerfile.zim-tools .")
     zimtools = subprocess.check_output(f"docker run -d --name zimdump zim-tools --mount \"type=volume,src={tmpdir},dst=/tmp/workdir\"")
     print("Starting zimdump extraction...")
-    os.system(f"docker exec zimtools /usr/local/bin/zimdump dump --dir=/tmp/workdir/out --redirect {tmpdir}/input.zim")
+    # TODO: Fix https://github.com/openzim/zim-tools/issues/303 and make Bee understand redirects, then add `--redirect` here:
+    os.system(f"docker exec zimtools /usr/local/bin/zimdump dump --dir=/tmp/workdir/out {tmpdir}/input.zim")
     os.system(f"docker rm {zimtools}")
     os.system(f"rm -rf {tmpdir}/out/X")  # Remove useless search indexes.
 
