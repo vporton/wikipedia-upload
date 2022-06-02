@@ -23,3 +23,5 @@ So, instead just do 1000 `bzz-raw` uploads with a tag and wait till `synced`=`to
 Alternatively, we can assign a tag to every `bzz-raw` upload, but it seems unnecessary.
 (I suppose that uploading many chunks to local node is a reliable operation and the
 need to reupload is seldom.)
+
+TODO: Google Custom Search?
