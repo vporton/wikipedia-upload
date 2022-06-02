@@ -61,8 +61,9 @@ def prepare_files(output_dir):
         os.system(f"sudo chown -R `id -u`:`id -g` {output_dir}")  # hack
         os.system(f"rm -rf {output_dir}/X")  # Remove useless search indexes.
 
+        # TODO: Files for other sites (not Wikipedia).
         os.system(f"cp index.html error.html {output_dir}")
-        os.system(f"cd {output_dir} && wget https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css")
+        # os.system(f"cd {output_dir} && wget https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css")
 
         if not args.no_brotli:
             os.system(f"docker build -t brotler -f Dockerfile.brotler .")
