@@ -44,6 +44,13 @@ with TemporaryDirectory as tmpdir:
     print("Starting zimdump extraction...")
     os.system(f"docker exec zimtools /usr/local/bin/zimdump dump --dir=/tmp/workdir/out --redirect {tmpdir}/input.zim")
     os.system(f"docker rm {zimtools}")
+    os.system(f"rm -rf {tmpdir}/out/X")  # Remove useless search indexes.
+
+    os.system(f"docker build -t brotler -f Dockerfile.brotler .")
+    brotler = subprocess.check_output(f"docker run -d --name brotler brotler --mount \"type=volume,src={tmpdir},dst=/tmp/workdir\"")
+    print("Starting brotler...")
+    os.system(f"docker exec brotler /root/brotler/target/release/brotler /tmp/workdir/out")
+    os.system(f"docker rm {brotler}")
 
     if args.batch_id is None:
         price_in_bzz_per_byte_second = FIXME
