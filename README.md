@@ -6,9 +6,7 @@ Algorithm on trigger:
 
 1. Start Docker with Bee.
 
-1. Upload each file encoding by brotli by `bzz-raw` at the same time calculating its bzzhash by Go.
-   Then generate on-the-fly and upload the manifest.
-   Calculate manifest accordingly https://ethereum.stackexchange.com/questions/83977/generate-directory-hash-without-upload-using-swarm-api
+1. Modify `.tar` upload for:
    Symlinks will be uploaded with `Content-Type: text/x-redirect; charset=utf-8`.
 
 1. Output to terminal `synced`!=`total` until they equal.
