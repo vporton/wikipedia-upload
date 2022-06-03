@@ -7,7 +7,17 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[[bin]]
+name = "brotler"
+
+[[bin]]
+name = "indexer"
+
 [dependencies]
 walkdir = "2.3.2"
 brotlic = "0.7.0"
 tempfile = "3.3.0"
+ammonia = "3.2.0"
+maplit = "1.0.2"
+regex = "1.5.6"
+lazy_static = "1.4.0"

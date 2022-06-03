@@ -1,17 +1,17 @@
 use std::{env, process};
 use std::fmt::{Display, Formatter};
 use std::fs::File;
-use std::io::copy;
+use std::io::Read;
 use std::path::Path;
-use brotlic::{BrotliEncoderOptions, CompressorWriter, Quality, SetParameterError, WindowSize};
-use tempfile::{NamedTempFile, TempPath};
+use lazy_static::lazy_static;
 use walkdir::WalkDir;
+use maplit::hashset;
+use regex::Regex;
 
 #[derive(Debug)]
 enum MyError {
     IO(std::io::Error),
     WalkDir(walkdir::Error),
-    SetParameter(SetParameterError),
 }
 
 impl Display for MyError {
@@ -19,7 +19,6 @@ impl Display for MyError {
         match self {
             Self::IO(err) => write!(f, "I/O: {err}"),
             Self::WalkDir(err) => write!(f, "Walking dir: {err}"),
-            Self::SetParameter(err) => write!(f, "Setting parameter: {err}"),
         }
     }
 }
@@ -36,12 +35,6 @@ impl From<std::io::Error> for MyError {
     }
 }
 
-impl From<SetParameterError> for MyError {
-    fn from(value: SetParameterError) -> Self {
-        Self::SetParameter(value)
-    }
-}
-
 fn main() {
     if let Err(err) = almost_main() {
         eprintln!("{err}");
@@ -51,7 +44,7 @@ fn main() {
 
 fn almost_main() -> Result<(), MyError> {
     if env::args().len() != 2 {
-        eprintln!("Usage: brotler <DIR>");
+        eprintln!("Usage: indexer <DIR>");
         process::exit(1);
     }
     for entry in WalkDir::new(Path::new(&env::args().nth(1).unwrap()))
@@ -62,30 +55,38 @@ fn almost_main() -> Result<(), MyError> {
         let entry = entry?;
         if !entry.file_type().is_dir() {
             println!("{}", entry.path().to_str().unwrap());
-            compress_file(&entry.path())?;
+            index_file(&entry.path())?;
         }
     }
 
     Ok(())
 }
 
-fn compress_file(path: &Path) -> Result<(), MyError> {
+lazy_static! {
+    static ref WIKIPEDIA_REMOVE: Regex = Regex::new(r"(?s)<!--htdig_noindex-->.*?<!--/htdig_noindex-->").unwrap();
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::WIKIPEDIA_REMOVE;
+
+    #[test]
+    fn test_regex() {
+        assert_eq!(WIKIPEDIA_REMOVE.replace("u\nx<!--htdig_noindex-->a\nb<!--/htdig_noindex-->y", ""), "u\nxy");
+    }
+}
+
+fn index_file(path: &Path) -> Result<(), MyError> {
     let mut input = File::open(path.clone())?; // uncompressed text file
-    let output_file = NamedTempFile::new()?;
-    let output_path: TempPath = output_file.into_temp_path();
-    let output_path: &Path = output_path.as_ref();
-    let output = File::create(output_path)?; // compressed text output file
-
-    let encoder = BrotliEncoderOptions::new()
-        .quality(Quality::best())
-        .window_size(WindowSize::new(24).unwrap())
-        .build()?;
-
-    let mut output_compressed = CompressorWriter::with_encoder(encoder, output);
-
-    copy(&mut input, &mut output_compressed)?;
-    drop(output_compressed);
-    // rename(output_path, path)?; // /tmp is on another filesystem
-    std::fs::copy(output_path, path)?;
+    let mut cleaned= Vec::new();
+    input.read_to_end(&mut cleaned)?;
+    let cleaned = String::from_utf8_lossy(&*cleaned.as_slice());
+    let cleaned = WIKIPEDIA_REMOVE.replace(&*cleaned, "");
+    let cleaned = ammonia::Builder::default()
+        .tags(hashset![])
+        .clean_content_tags(hashset!["head", "script"])
+        .clean(&*cleaned)
+        .to_string();
+    println!("{}", cleaned);
     Ok(())
 }
