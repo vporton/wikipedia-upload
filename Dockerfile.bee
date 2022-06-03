@@ -3,19 +3,34 @@ FROM ubuntu:22.10
 ENV BEE_CLEF_CHAIN_ID=100
 
 RUN apt -y update
-RUN apt -y install wget git nodejs make
+RUN apt -y install wget git make golang-1.17-go
 
+RUN update-alternatives --install /usr/bin/go go /usr/lib/go-1.17/bin/go 50
+
+# WORKDIR /root
+# RUN wget https://go.dev/dl/go1.18.3.src.tar.gz
+# RUN tar -xzf go1.18.3.src.tar.gz
+# WORKDIR /root/go
+# RUN ./all.bash
+# WORKDIR /root
+# RUN rm -rf go1.18.3.src.tar.gz go
+
+WORKDIR /root
 RUN wget https://github.com/ethersphere/bee-clef/releases/download/v0.12.0/bee-clef_0.12.0_amd64.deb
 RUN dpkg -i bee-clef_0.12.0_amd64.deb
 RUN rm -f bee-clef_0.12.0_amd64.deb
 
+WORKDIR /root
 RUN git clone https://github.com/ethersphere/bee
-RUN cd bee
+WORKDIR /root/bee
 RUN git checkout v1.6.0
+# RUN PATH="/root/go/bin:$PATH" make binary
 RUN make binary
 RUN cp dist/bee /usr/local/bin/bee
 RUN rm -rf bee
 
 COPY bee-config.yaml .
 
-CMD bee start --config bee-config.yaml
+ENV more_bee_args=
+VOLUME /root/.bee
+CMD bee start --config bee-config.yaml $more_bee_args
