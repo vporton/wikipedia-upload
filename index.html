@@ -5,23 +5,68 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Wikipedia on Swarm</title>
     <script>
-        function openArticle(event) {
-            document.getElementById('frame').src = 'A/' + encodeURIComponent(document.getElementById('entry').value);
-            event.preventDefault()
+      function openArticle(event) {
+        document.getElementById('frame').src = 'A/' + encodeURIComponent(document.getElementById('entry').value);
+        event.preventDefault();
+      }
+      function searchArticle(event) {
+        let words = document.getElementById('entry').value.split('\W')
+          .filter(w => w !== "").map(w => w.toLowerCase());
+        if(!words.length) {
+          event.preventDefault();
+          return;
         }
+
+        let tasks = words.map(w => {
+          fetch('search/' + encodeURIComponent(w))
+            .then(res => res.text())
+            .then(text => {
+              pages = text.split('\0')
+              --pages.length; // remove empty string at end
+              return new Set(pages);
+            })
+        });
+        const sets = Promise.all(tasks);
+        let set = sets[0];
+        for(let i = 1; i != sets.length; ++i) {
+          const set2 = sets[i];
+          set = new Set([...set].filter(e => set2.has(e)));
+        }
+
+        const ul = document.getElementById('searchResults');
+        for(;;) {
+          const child = e.lastElementChild;
+          if(!child) break;
+          ul.removeChild(child);
+        }
+        for(let name of set) {
+          const link = `A/${encodeURIComponent(name)}`;
+          ul.innerHTML += `<li><a href="${link}">name</a></li>`;
+        }
+
+        document.getElementById('frame').style.display = 'none';
+        document.getElementById('searchResults').style.display = 'block';
+
+        event.preventDefault();
+      }
     </script>
   </head>
   <body style="margin: 0">
     <div style="display: flex; flex-direction: column; height: 100vh;">
-        <header style="padding: 6px">
-            <h1>Wikipedia on Swarm</h1>
-            <form action="#" onsubmit="openArticle(event)">
-                <p style="display: flex"><input type="text" id="entry" style="width: 100%"/>
-                    <span>&nbsp;</span>
-                    <input type="submit" value="Open article"/></p>
-            </form>
-        </header>
+      <header style="padding: 6px">
+        <h1>Wikipedia on Swarm</h1>
+        <form action="#" onsubmit="openArticle(event)">
+          <p style="display: flex"><input type="text" id="entry" style="width: 100%"/>
+            <span>&nbsp;</span>
+            <input type="submit" value="Open article"/></p>
+            <input type="button" onclick="searchArticle(event)" value="Search"/>
+          </p>
+        </form>
+      </header>
+      <div id="area" style="width: 100%; height: 100%">
         <iframe src="about:blank" id="frame" style="width: 100%; height: 100%; border: 0px"></iframe>
+        <ul id="searchResults" style="display: none; overflow: scroll"></ul>
+      </div>
     </div>
   </body>
 </html>

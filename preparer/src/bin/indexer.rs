@@ -141,10 +141,11 @@ fn index_file(path: &Path, args: &Args) -> Result<(), MyError> {
         if word.is_empty() {
             continue;
         }
-        word_counts.entry(word).and_modify(|e| *e += 1).or_insert(1);
-        if word_counts[word] <= args.max_entries as u64 {
+        let word = word.to_lowercase();
+        word_counts.entry(word.clone()).and_modify(|e| *e += 1).or_insert(1);
+        if word_counts[word.as_str()] <= args.max_entries as u64 {
             let rel_path = path.strip_prefix(Path::new(args.input_dir.as_str()))?;
-            let output_path = Path::new(args.output_dir.as_str()).join(Path::new(word));
+            let output_path = Path::new(args.output_dir.as_str()).join(Path::new(word.as_str()));
             // Ignore "File name too long" error:
             if let Ok(mut file) = File::options().create(true).append(true).open(output_path) {
                 let s = rel_path.to_str().ok_or(MyUnicodeError::new())?.to_string() + "\0";
