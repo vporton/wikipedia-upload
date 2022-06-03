@@ -60,7 +60,7 @@ def extract_zim(output_dir):
             os.system(f"docker build -t preparer -f Dockerfile.preparer .")
             print("Starting preparer...")
             os.system(f"docker run --name preparer -v \"{abspath(output_dir)}:/volume\" preparer" \
-                f" /root/preparer/target/release/preparer /volume")
+                f" /root/preparer/target/release/brotler /volume")
             os.system(f"docker rm -f preparer")
             os.system(f"sudo chown -R `id -u`:`id -g` {output_dir}")  # hack
 
