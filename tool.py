@@ -82,7 +82,7 @@ def upload(directory):
     tag = res.json()["uid"]
 
     print("Starting TAR upload...")
-    process = subprocess.Popen(f"tar -C {directory} -cf .", stdout=subprocess.PIPE)
+    tar = subprocess.Popen(f"tar -C {directory} -cf .", stdout=subprocess.PIPE)
     # TODO: Specify Index-Document & Error-Document as command-line options.
     res = requests.post("http://localhost:1633/bzz", data=tar, headers={
         "Content-Type": "application/x-tar",
