@@ -4,13 +4,14 @@ RUN apt -y update
 RUN apt -y install wget pkgconf meson ninja-build libzim-dev cmake \
     libdocopt-dev libkainjow-mustache-dev libmagic-dev zlib1g-dev libgumbo-dev libicu-dev
 
+WORKDIR /root
 RUN wget https://download.openzim.org/release/zim-tools/zim-tools-3.1.1.tar.xz
 RUN tar xf zim-tools-3.1.1.tar.xz
-WORKDIR zim-tools-3.1.1
+WORKDIR /root/zim-tools-3.1.1
 RUN meson . build
 RUN ninja -C build
 RUN ninja -C build install
-WORKDIR ..
+WORKDIR /root
 RUN rm -rf zim-tools
 
 RUN mkdir /in /out
