@@ -8,6 +8,7 @@ from tempfile import TemporaryDirectory
 import argparse
 
 parser = argparse.ArgumentParser(description="Extract ZIM archive and/or upload files to Swarm")
+parser.add_argument("-S", "--search", dest="search_index", help="create search index in search/", action=argparse.BooleanOptionalAction)
 parser.add_argument("-B", "--brotli", dest="brotli", help="compress files with Brotli (inplace)", action=argparse.BooleanOptionalAction)
 subparsers = parser.add_subparsers(dest='command', help="the operation to perform")
 group = parser.add_mutually_exclusive_group(required=True)
@@ -56,16 +57,15 @@ def extract_zim(output_dir):
         os.system(f"cp index.html error.html {output_dir}")
         # os.system(f"cd {output_dir} && wget https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css")
 
-        if args.brotli:
-            os.system(f"docker build -t preparer -f Dockerfile.preparer .")
-            print("Starting preparer...")
+        os.system(f"docker build -t preparer -f Dockerfile.preparer .")
+        if args.search_index:
+            print("Creating search index...")
             os.system(f"docker run --name preparer -v \"{abspath(output_dir)}:/volume\" preparer" \
                 f" /root/preparer/target/release/indexer /volume/A /volume/search")
-            os.system(f"sudo chown -R `id -u`:`id -g` {output_dir}")  # hack
+        if args.brotli:
             os.system(f"docker run --name preparer -v \"{abspath(output_dir)}:/volume\" preparer" \
                 f" /root/preparer/target/release/brotler /volume")
-            os.system(f"sudo chown -R `id -u`:`id -g` {output_dir}")  # hack
-            os.system(f"sudo chown -R `id -u`:`id -g` {output_dir}")  # hack
+        os.system(f"sudo chown -R `id -u`:`id -g` {output_dir}")  # hack
 
 def extract_and_upload():
     with TemporaryDirectory() as tmpdir:
