@@ -65,10 +65,10 @@ def upload(directory):
     if args.brotli:
         os.system(f"docker build -t brotler -f Dockerfile.brotler .")
         print("Starting brotler...")
-        os.system(f"docker run --name brotler -v \"{abspath(output_dir)}:/volume\" brotler" \
+        os.system(f"docker run --name brotler -v \"{abspath(directory)}:/volume\" brotler" \
             f" /root/brotler/target/release/brotler /volume")
         os.system(f"docker rm -f brotler")
-        os.system(f"sudo chown -R `id -u`:`id -g` {output_dir}")  # hack
+        os.system(f"sudo chown -R `id -u`:`id -g` {directory}")  # hack
 
     if args.batch_id is None:
         price_in_bzz_per_byte_second = FIXME
