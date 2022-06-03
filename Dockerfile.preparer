@@ -6,8 +6,8 @@ RUN apt -y install curl gcc
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 RUN /root/.cargo/bin/rustup default 1.61.0
 
-COPY brotler /root/brotler
-WORKDIR /root/brotler
+COPY preparer /root/preparer
+WORKDIR /root/preparer
 RUN rm -rf target
 RUN /root/.cargo/bin/cargo build --release
 
