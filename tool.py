@@ -30,8 +30,6 @@ if args.command == 'extract' and args.input_dir is not None:
     sys.stderr.write("Incompatible options: cannot extract from directory.")
     os.exit(1)
 
-no_upload = args.output_dir is not None
-
 def extract_zim(output_dir):
     with TemporaryDirectory() as input_dir:
         if args.zim_url:
@@ -73,33 +71,47 @@ def extract_and_upload():
 
 def upload(directory):
     if args.batch_id is None:
-        price_in_bzz_per_byte_second = FIXME
-        total_size_in_bytes = int( subprocess.check_output(f"du -sb {directory} | awk '{{print \$1}}'") )
-        cost_in_bzz = price_in_bzz_per_byte_second * total_size_in_bytes * args.keepalive_seconds
+        res = requests.get("http://localhost:1635/chainstate")
+        price_in_bzz_per_block_second = int(res.json()["currentPrice"])
+        total_size_in_blocks = int( subprocess.check_output(f"du -s -B 4096 {directory} | awk '{{print $1}}'", shell=True) )
+        cost_in_bzz = total_size_in_blocks * price_in_bzz_per_block_second * int(args.keepalive_seconds) / 5
         depth = 20
-        amount = cost_in_bzz * (10**16) / (2**depth)
-        res = requests.post(f"http://localhost:1635/stamps/{amount}/{depth}")
+        amount = int(cost_in_bzz / (2**depth)) + 1
+        url = f"http://localhost:1635/stamps/{amount}/{depth}"
+        print(url)
+        res = requests.post(url)
         batch_id = res.json()["batchID"]
 
+    print("Creating an upload tag...")
     res = requests.post("http://localhost:1633/tags")
     tag = res.json()["uid"]
+    print(f"Upload tag = {tag}")
 
+    print("Starting TAR upload...")
     while True:  # loop until batch ID is available
-        print("Starting TAR upload (waiting for batch ID)...")
-        tar = subprocess.Popen(f"tar -C {directory} -cf .", stdout=subprocess.PIPE)
+        tar = subprocess.Popen(f"tar -C {directory} -cf - .", shell=True, stdout=subprocess.PIPE)
         headers = {
             "Content-Type": "application/x-tar",
             "Swarm-Collection": "true",
             "Swarm-Postage-Batch-Id": batch_id,
-            "Swarm-Tag": tag,
+            "Swarm-Tag": str(tag),
         }
         if args.index_document is not None:
             headers["Swarm-Index-Document"] = args.index_document
         if args.error_document is not None:
             headers["Swarm-Error-Document"] = args.error_document
-        res = requests.post("http://localhost:1633/bzz", data=tar, headers=headers)
-        if res.status_code() == 200:
+        res = requests.post("http://localhost:1633/bzz", data=tar.stdout, headers=headers)
+        if res.status_code != 400:
+            with open("uploads.log", 'a') as uploads_log:
+                file_identificator = (args.zim_file if args.zim_file else args.zim_url) \
+                    if args.zim_file or args.zim_url else args.input_dir
+                uploaded_reference = res.json()['reference']
+                log_line = f"{file_identificator} {uploaded_reference}\n"
+                uploads_log.write(log_line)
+                sys.stdout.write(log_line)
             break
+        else:
+            print(res.json()["message"])
         sleep(1.0)
 
     while True:
