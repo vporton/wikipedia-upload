@@ -1,4 +1,5 @@
 use std::{env, process};
+use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 use std::fs::File;
 use std::io::Read;
@@ -6,7 +7,7 @@ use std::path::Path;
 use lazy_static::lazy_static;
 use walkdir::WalkDir;
 use maplit::hashset;
-use regex::Regex;
+use regex::{Regex, Split};
 
 #[derive(Debug)]
 enum MyError {
@@ -47,6 +48,7 @@ fn almost_main() -> Result<(), MyError> {
         eprintln!("Usage: indexer <DIR>");
         process::exit(1);
     }
+    let root_dir; // FIXME: Don't index index files.
     for entry in WalkDir::new(Path::new(&env::args().nth(1).unwrap()))
         .sort_by_file_name() // keep the order deterministic, because we overwrite files
         .into_iter()
@@ -87,6 +89,22 @@ fn index_file(path: &Path) -> Result<(), MyError> {
         .clean_content_tags(hashset!["head", "script"])
         .clean(&*cleaned)
         .to_string();
-    println!("{}", cleaned);
+    let mut word_counts = HashMap::new();
+    for word in tokenize(cleaned.as_str()) {
+        if word.is_empty() {
+            continue;
+        }
+        word_counts.entry(word).and_modify(|e| *e += 1).or_insert(1);
+        if word_counts[word] <= 500 { // FIXME: Add a parameter
+            let file = File::options().append(true)
+        }
+    }
     Ok(())
+}
+
+fn tokenize(s: &str) -> Split {
+    lazy_static! {
+        static ref RE: Regex = Regex::new(r"\W").unwrap();
+    }
+    RE.split(s)
 }
