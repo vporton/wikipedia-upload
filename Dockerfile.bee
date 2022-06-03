@@ -15,10 +15,10 @@ RUN update-alternatives --install /usr/bin/go go /usr/lib/go-1.17/bin/go 50
 # WORKDIR /root
 # RUN rm -rf go1.18.3.src.tar.gz go
 
-WORKDIR /root
-RUN wget https://github.com/ethersphere/bee-clef/releases/download/v0.12.0/bee-clef_0.12.0_amd64.deb
-RUN dpkg -i bee-clef_0.12.0_amd64.deb
-RUN rm -f bee-clef_0.12.0_amd64.deb
+# WORKDIR /root
+# RUN wget https://github.com/ethersphere/bee-clef/releases/download/v0.12.0/bee-clef_0.12.0_amd64.deb
+# RUN dpkg -i bee-clef_0.12.0_amd64.deb
+# RUN rm -f bee-clef_0.12.0_amd64.deb
 
 WORKDIR /root
 RUN git clone https://github.com/ethersphere/bee
@@ -33,4 +33,5 @@ COPY bee-config.yaml .
 
 ENV more_bee_args=
 VOLUME /root/.bee
+RUN systemctl status bee-clef
 CMD bee start --config bee-config.yaml $more_bee_args
