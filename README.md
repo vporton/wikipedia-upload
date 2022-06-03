@@ -33,3 +33,5 @@ Python logs
 Tell about sudo and password.
 
 TODO: Don't copy {index,error.html} by default.
+
+Debug port must be open unless you specify existing `--batch-id`.
