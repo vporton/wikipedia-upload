@@ -8,6 +8,7 @@ from tempfile import TemporaryDirectory
 import argparse
 
 parser = argparse.ArgumentParser(description="Extract ZIM archive and/or upload files to Swarm")
+parser.add_argument("-B", "--brotli", dest="brotli", help="compress files with Brotli (inplace)", action=argparse.BooleanOptionalAction)
 subparsers = parser.add_subparsers(dest='command', help="the operation to perform")
 group = parser.add_mutually_exclusive_group(required=True)
 group.add_argument("-f", "--zim-file", dest="zim_file", help="ZIM file for extraction")
@@ -16,11 +17,12 @@ group.add_argument("-i", "--input-dir", dest="input_dir", help="input directory 
 parser_extract = subparsers.add_parser('extract', help="extract from ZIM")
 parser_extract.add_argument("-o", "--output-dir", dest="output_dir", help="output directory", metavar="DIR")
 parser_upload = subparsers.add_parser('upload', help="upload to Swarm (after extraction if ZIM file specified)")
-parser_upload.add_argument("-B", "--brotli", dest="brotli", help="compress files with Brotli (inplace)", action=argparse.BooleanOptionalAction)
 group = parser_upload.add_mutually_exclusive_group(required=True)
 group.add_argument("-s", "--keepalive-seconds", dest="keepalive_seconds",
                    help="keep swarm alive for at least about this", metavar="SECONDS")
 group.add_argument("-b", "--batch-id", dest="batch_id", help="use batch ID to upload")
+group.add_argument("-I", "--index-doc", dest="index_document", help="index document name")
+group.add_argument("-E", "--error-doc", dest="error_document", help="error document name")
 
 args = parser.parse_args()
 
@@ -56,20 +58,20 @@ def extract_zim(output_dir):
         os.system(f"cp index.html error.html {output_dir}")
         # os.system(f"cd {output_dir} && wget https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css")
 
+        if args.brotli:
+            os.system(f"docker build -t brotler -f Dockerfile.brotler .")
+            print("Starting brotler...")
+            os.system(f"docker run --name brotler -v \"{abspath(output_dir)}:/volume\" brotler" \
+                f" /root/brotler/target/release/brotler /volume")
+            os.system(f"docker rm -f brotler")
+            os.system(f"sudo chown -R `id -u`:`id -g` {output_dir}")  # hack
+
 def extract_and_upload():
     with TemporaryDirectory() as tmpdir:
         extract_zim(tmpdir)
         upload(tmpdir)
 
 def upload(directory):
-    if args.brotli:
-        os.system(f"docker build -t brotler -f Dockerfile.brotler .")
-        print("Starting brotler...")
-        os.system(f"docker run --name brotler -v \"{abspath(directory)}:/volume\" brotler" \
-            f" /root/brotler/target/release/brotler /volume")
-        os.system(f"docker rm -f brotler")
-        os.system(f"sudo chown -R `id -u`:`id -g` {directory}")  # hack
-
     if args.batch_id is None:
         price_in_bzz_per_byte_second = FIXME
         total_size_in_bytes = int( subprocess.check_output(f"du -sb {directory} | awk '{{print \$1}}'") )
@@ -85,15 +87,17 @@ def upload(directory):
     while True:  # loop until batch ID is available
         print("Starting TAR upload (waiting for batch ID)...")
         tar = subprocess.Popen(f"tar -C {directory} -cf .", stdout=subprocess.PIPE)
-        # TODO: Specify Index-Document & Error-Document as command-line options.
-        res = requests.post("http://localhost:1633/bzz", data=tar, headers={
+        headers = {
             "Content-Type": "application/x-tar",
-            "Swarm-Index-Document": "index.html",
-            "Swarm-Error-Document": "error.html",
             "Swarm-Collection": "true",
             "Swarm-Postage-Batch-Id": batch_id,
             "Swarm-Tag": tag,
-        })
+        }
+        if args.index_document is not None:
+            headers["Swarm-Index-Document"] = args.index_document
+        if args.error_document is not None:
+            headers["Swarm-Error-Document"] = args.error_document
+        res = requests.post("http://localhost:1633/bzz", data=tar, headers=headers)
         if res.status_code() == 200:
             break
         sleep(1.0)
