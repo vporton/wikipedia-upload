@@ -128,7 +128,6 @@ fn index_file(path: &Path, args: &Args) -> Result<(), MyError> {
     let mut cleaned= Vec::new();
     input.read_to_end(&mut cleaned)?;
     let cleaned = String::from_utf8_lossy(&*cleaned.as_slice());
-    // println!("[[{}]]", cleaned);
     let cleaned = NBSP.replace_all(&*cleaned, " ");
     let cleaned = CELL_END.replace_all(&*cleaned, " ");
     let cleaned = WIKIPEDIA_REMOVE.replace_all(&*cleaned, "");
@@ -137,7 +136,6 @@ fn index_file(path: &Path, args: &Args) -> Result<(), MyError> {
         .clean_content_tags(hashset!["head", "script"])
         .clean(&*cleaned)
         .to_string();
-    // println!("//{}//", cleaned);
     let mut word_counts = HashMap::new();
     for word in tokenize(cleaned.as_str()) {
         if word.is_empty() {
@@ -146,7 +144,6 @@ fn index_file(path: &Path, args: &Args) -> Result<(), MyError> {
         word_counts.entry(word).and_modify(|e| *e += 1).or_insert(1);
         if word_counts[word] <= args.max_entries as u64 {
             let rel_path = path.strip_prefix(Path::new(args.input_dir.as_str()))?;
-            println!("{}", rel_path.to_str().ok_or(MyUnicodeError::new())?);
             let output_path = Path::new(args.output_dir.as_str()).join(Path::new(word));
             // Ignore "File name too long" error:
             if let Ok(mut file) = File::options().create(true).append(true).open(output_path) {

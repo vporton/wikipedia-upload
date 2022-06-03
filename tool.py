@@ -57,11 +57,11 @@ def extract_zim(output_dir):
         # os.system(f"cd {output_dir} && wget https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css")
 
         if args.brotli:
-            os.system(f"docker build -t brotler -f Dockerfile.brotler .")
-            print("Starting brotler...")
-            os.system(f"docker run --name brotler -v \"{abspath(output_dir)}:/volume\" brotler" \
-                f" /root/brotler/target/release/brotler /volume")
-            os.system(f"docker rm -f brotler")
+            os.system(f"docker build -t preparer -f Dockerfile.preparer .")
+            print("Starting preparer...")
+            os.system(f"docker run --name preparer -v \"{abspath(output_dir)}:/volume\" preparer" \
+                f" /root/preparer/target/release/preparer /volume")
+            os.system(f"docker rm -f preparer")
             os.system(f"sudo chown -R `id -u`:`id -g` {output_dir}")  # hack
 
 def extract_and_upload():
