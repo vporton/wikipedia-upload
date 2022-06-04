@@ -26,6 +26,8 @@ need to reupload is seldom.)
 
 TODO: https://github.com/ethersphere/swarm-cli/blob/ec496a220bffd024f9e3896abd96a834032b7200/src/command/upload.ts#L272
 
+You can set log level of Rust software with `RUST_LOG` environment variable,
+e.g. `RUST_LOG=debug` for debug output.
 Python logs
 
 Tell about sudo and password.

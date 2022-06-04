@@ -1,5 +1,6 @@
 #!/bin/env python3
 
+import logging
 from shutil import copyfile
 from os.path import abspath
 import sys, os, subprocess, requests
@@ -8,6 +9,7 @@ from tempfile import TemporaryDirectory
 import argparse
 
 parser = argparse.ArgumentParser(description="Extract ZIM archive and/or upload files to Swarm")
+parser.add_argument("-l", "--log-level", dest="log_level", help="log level (DEBUG, INFO, WARNING, ERROR, CRITICAL or a number)")
 parser.add_argument("-S", "--search", dest="search_index", help="create search index in search/", action=argparse.BooleanOptionalAction)
 parser.add_argument("-B", "--brotli", dest="brotli", help="compress files with Brotli (inplace)", action=argparse.BooleanOptionalAction)
 subparsers = parser.add_subparsers(dest='command', help="the operation to perform")
@@ -31,6 +33,8 @@ if args.command == 'extract' and args.input_dir is not None:
     sys.stderr.write("Incompatible options: cannot extract from directory.")
     os.exit(1)
 
+logging.basicConfig(level=args.log_level or logging.INFO)
+
 def extract_zim(output_dir):
     with TemporaryDirectory() as input_dir:
         if args.zim_url:
@@ -42,8 +46,7 @@ def extract_zim(output_dir):
         os.mkdir(output_dir)
 
         os.system(f"docker build -t zim-tools -f Dockerfile.zim-tools .")
-        print("Starting zimdump extraction...")
-        print(f"OUTPUT={output_dir}")
+        logging.info("Starting zimdump extraction to {output_dir}...")
         os.system(
             f"docker run -u{os.getuid()} --name zimdump -v \"{abspath(input_dir)}:/in\" -v \"{abspath(output_dir)}:/out\" zim-tools " \
                 f"/usr/local/bin/zimdump dump --dir=/out /in/input.zim")
@@ -58,7 +61,7 @@ def extract_zim(output_dir):
 
         os.system(f"docker build -t preparer -f Dockerfile.preparer .")
         if args.search_index:
-            print("Creating search index...")
+            logging.info("Creating search index...")
             # FIXME: Specify maximum number of matches.
             os.system(f"docker run -u{os.getuid()} --name preparer -v \"{abspath(output_dir)}:/volume\" preparer" \
                 f" /root/preparer/target/release/indexer /volume/A /volume/search")
@@ -81,16 +84,15 @@ def upload(directory):
         depth = 20
         amount = int(cost_in_bzz / (2**depth)) + 1
         url = f"http://localhost:1635/stamps/{amount}/{depth}"
-        print(url)
         res = requests.post(url)
         batch_id = res.json()["batchID"]
 
-    print("Creating an upload tag...")
+    logging.info("Creating an upload tag...")
     res = requests.post("http://localhost:1633/tags")
     tag = res.json()["uid"]
-    print(f"Upload tag = {tag}")
+    logging.info(f"Upload tag: {tag}")
 
-    print("Starting TAR upload...")
+    logging.info("Starting TAR upload...")
     while True:  # loop until batch ID is available
         tar = subprocess.Popen(f"tar -C {directory} -cf - .", shell=True, stdout=subprocess.PIPE)
         headers = {
@@ -114,7 +116,7 @@ def upload(directory):
                 sys.stdout.write(log_line)
             break
         else:
-            print(res.json()["message"])
+            logging.debug(res.json()["message"])
         sleep(1.0)
 
     while True:
@@ -122,7 +124,7 @@ def upload(directory):
         total = res.json()['total']
         processed = res.json()['processed']
         synced = res.json()['synced']
-        print(f"fotal={total} processed={processed} synced={synced}")
+        logging.info(f"fotal={total} processed={processed} synced={synced}")
         if synced == total:
             break
 
