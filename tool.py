@@ -12,6 +12,8 @@ parser = argparse.ArgumentParser(description="Extract ZIM archive and/or upload 
 parser.add_argument("-l", "--log-level", dest="log_level", help="log level (DEBUG, INFO, WARNING, ERROR, CRITICAL or a number)")
 parser.add_argument("-S", "--search", dest="search_index", help="create search index in search/", action=argparse.BooleanOptionalAction)
 parser.add_argument("-B", "--brotli", dest="brotli", help="compress files with Brotli (inplace)", action=argparse.BooleanOptionalAction)
+parser.add_argument("-m", "--max-search-results", dest="max_search_results", help="maximum number of search results stored",
+                    default=500)
 subparsers = parser.add_subparsers(dest='command', help="the operation to perform")
 group = parser.add_mutually_exclusive_group(required=True)
 group.add_argument("-f", "--zim-file", dest="zim_file", help="ZIM file for extraction")
@@ -46,7 +48,7 @@ def extract_zim(output_dir):
         os.mkdir(output_dir)
 
         os.system(f"docker build -t zim-tools -f Dockerfile.zim-tools .")
-        logging.info("Starting zimdump extraction to {output_dir}...")
+        logging.info(f"Starting zimdump extraction to {output_dir}...")
         os.system(
             f"docker run -u{os.getuid()} --name zimdump -v \"{abspath(input_dir)}:/in\" -v \"{abspath(output_dir)}:/out\" zim-tools " \
                 f"/usr/local/bin/zimdump dump --dir=/out /in/input.zim")
@@ -62,9 +64,8 @@ def extract_zim(output_dir):
         os.system(f"docker build -t preparer -f Dockerfile.preparer .")
         if args.search_index:
             logging.info("Creating search index...")
-            # FIXME: Specify maximum number of matches.
             os.system(f"docker run -u{os.getuid()} --name preparer -v \"{abspath(output_dir)}:/volume\" preparer" \
-                f" /root/preparer/target/release/indexer /volume/A /volume/search")
+                f" /root/preparer/target/release/indexer -m {args.max_search_results} /volume/A /volume/search")
         if args.brotli:
             os.system(f"docker run -u{os.getuid()} --name preparer -v \"{abspath(output_dir)}:/volume\" preparer" \
                 f" /root/preparer/target/release/brotler /volume")
