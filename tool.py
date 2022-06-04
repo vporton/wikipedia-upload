@@ -60,7 +60,6 @@ def extract_zim(output_dir):
 
         os.mkdir(output_dir)
 
-        run_command(f"docker build -t zim-tools -f Dockerfile.zim-tools .")
         logger.info(f"Starting zimdump extraction to {output_dir}...")
         run_command(
             f"docker run --rm -u{os.getuid()} -v \"{abspath(input_dir)}:/in\" -v \"{abspath(output_dir)}:/out\" zim-tools " \
@@ -72,7 +71,6 @@ def extract_zim(output_dir):
         if args.add_files != '':
             run_command(f"cp -r {args.add_files}/* {output_dir}")
 
-        run_command(f"docker build -t preparer -f Dockerfile.preparer .")
         if args.search_index:
             logger.info("Creating search index...")
             run_command(f"docker run --rm -e RUST_LOG={args.log_level} -u{os.getuid()} -v \"{abspath(output_dir)}:/volume\" preparer" \
