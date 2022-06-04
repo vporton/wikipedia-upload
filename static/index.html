@@ -11,8 +11,12 @@
       function openArticle(event) {
         document.getElementById('frame').style.display = 'block';
         document.getElementById('searchResults').style.display = 'none';
-        const url = 'A/' + encodeURIComponent(document.getElementById('entry').value.replace(/ +/g, '_'));
-        document.getElementById('frame').src = url;
+        let phrase = document.getElementById('entry').value.replace(/ +/g, '_');
+        if(phrase.length != 0) {
+          phrase = phrase[0].toUpperCase() + phrase.substring(1)
+          const url = 'A/' + encodeURIComponent(phrase);
+          document.getElementById('frame').src = url;
+        }
         event.preventDefault();
       }
       async function searchArticle(event) {
