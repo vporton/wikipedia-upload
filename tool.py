@@ -140,14 +140,7 @@ def upload(directory):
             logger.info('tar disconnected')
         else:
             if 200 <= res.status_code < 300:
-                file_identificator = (args.zim_file if args.zim_file else args.zim_url) \
-                    if args.zim_file or args.zim_url else args.input_dir
                 uploaded_reference = res.json()['reference']
-                log_line = f"{file_identificator} reference={uploaded_reference} batchID={batch_id} tag={tag}\n"
-                sys.stdout.write(log_line)
-                if args.uploads_log:
-                    with open(args.uploads_log, 'a') as uploads_log:
-                        uploads_log.write(log_line)
                 break
             else:
                 logger.info(res.json()["message"])
@@ -162,6 +155,14 @@ def upload(directory):
         if synced == total:
             break
         sleep(1.0)
+
+    file_identificator = (args.zim_file if args.zim_file else args.zim_url) \
+        if args.zim_file or args.zim_url else args.input_dir
+    log_line = f"{file_identificator} reference={uploaded_reference} batchID={batch_id} tag={tag}\n"
+    sys.stdout.write(log_line)
+    if args.uploads_log:
+        with open(args.uploads_log, 'a') as uploads_log:
+            uploads_log.write(log_line)
 
 if args.command == 'extract':
     extract_zim(args.output_dir)
