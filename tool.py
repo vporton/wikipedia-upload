@@ -60,6 +60,7 @@ def extract_zim(output_dir):
         os.system(f"docker build -t preparer -f Dockerfile.preparer .")
         if args.search_index:
             print("Creating search index...")
+            # FIXME: Specify maximum number of matches.
             os.system(f"docker run --name preparer -v \"{abspath(output_dir)}:/volume\" preparer" \
                 f" /root/preparer/target/release/indexer /volume/A /volume/search")
         if args.brotli:
