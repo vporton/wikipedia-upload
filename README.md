@@ -11,6 +11,7 @@ Do the following (in any order):
 
 Start a Bee node on localhost. Debug port must be enabled (unless for upload
 you specify existing batch ID by `--batch-id`). You can use my `Dockerfile.bee`.
+Don't forget to fund the Bee Swarm wallet with both xDai and BZZ.
 
 Build Docker images by
 ```sh
