@@ -12,6 +12,8 @@ Do the following (in any order):
 Start a Bee node on localhost. Debug port must be enabled (unless for upload
 you specify existing batch ID by `--batch-id`). You can use my `Dockerfile.bee`.
 Don't forget to fund the Bee Swarm wallet with both xDai and BZZ.
+Don't forget to connect `/root/.bee` to your volume directory, otherwise the
+files (including the funded wallet will disappear).
 
 Build Docker images by
 ```sh
@@ -78,6 +80,8 @@ options:
 ```
 
 In `extract` mode it does not upload to Swarm, but just creates a directory for testing.
+
+Some "difficult to understand" options:
 
 `-F` or `--add-files` allows to specify additional files to upload. By default `static/`
 subdirectory (not including hidden files) of current directory is added.
