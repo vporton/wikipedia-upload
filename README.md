@@ -40,7 +40,7 @@ options:
   -l LOG_LEVEL, --log-level LOG_LEVEL
                         log level (DEBUG, INFO, WARNING, ERROR, CRITICAL or a number)
   -F ADD_FILES, --add-files ADD_FILES
-                        files to add or empty string to add no files
+                        files to add
   -H, --enhance-files, --no-enhance-files
                         add a comment to bottom
   -M TEXT, --enhance-files-more TEXT

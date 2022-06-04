@@ -11,7 +11,7 @@ import argparse
 
 parser = argparse.ArgumentParser(description="Extract ZIM archive and/or upload files to Swarm")
 parser.add_argument("-l", "--log-level", dest="log_level", help="log level (DEBUG, INFO, WARNING, ERROR, CRITICAL or a number)")
-parser.add_argument("-F", "--add-files", dest="add_files", help="files to add or empty string to add no files", default="static")
+parser.add_argument("-F", "--add-files", dest="add_files", help="files to add", default="static")
 parser.add_argument("-H", "--enhance-files", dest="enhance_files", help="add a comment to bottom", action=argparse.BooleanOptionalAction)
 parser.add_argument("-M", "--enhance-files-more", dest="enhance_files_more", help="add the specified text in bottom comment", metavar="TEXT", default='')
 parser.add_argument("-S", "--search", dest="search_index", help="create search index in search/", action=argparse.BooleanOptionalAction)
@@ -76,8 +76,8 @@ def extract_zim(output_dir):
         # TODO: Fix https://github.com/openzim/zim-tools/issues/303 and make Bee understand redirects, then add `--redirect` here:
         run_command(f"rm -rf {output_dir}/X")  # Remove useless search indexes.
 
-        logger.info("Adding additional files...")
-        if args.add_files != '':
+        if args.add_files is not None:
+            logger.info("Adding additional files...")
             run_command(f"cp -r {args.add_files}/* {output_dir}")
         
         if args.search_index:
