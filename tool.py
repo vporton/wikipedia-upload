@@ -1,5 +1,6 @@
 #!/bin/env python3
 
+from cProfile import run
 import logging
 from shutil import copyfile
 from os.path import abspath
@@ -11,6 +12,8 @@ import argparse
 parser = argparse.ArgumentParser(description="Extract ZIM archive and/or upload files to Swarm")
 parser.add_argument("-l", "--log-level", dest="log_level", help="log level (DEBUG, INFO, WARNING, ERROR, CRITICAL or a number)")
 parser.add_argument("-F", "--add-files", dest="add_files", help="files to add or empty string to add no files", default="static")
+parser.add_argument("-E", "--enhance-files", dest="enhance_files", help="add a comment to bottom", action=argparse.BooleanOptionalAction)
+parser.add_argument("-M", "--enhance-files-more", dest="enhance_files_more", help="add the specified text in bottom comment", metavar="TEXT", default='')
 parser.add_argument("-S", "--search", dest="search_index", help="create search index in search/", action=argparse.BooleanOptionalAction)
 parser.add_argument("-B", "--brotli", dest="brotli", help="compress files with Brotli (inplace)", action=argparse.BooleanOptionalAction)
 parser.add_argument("-m", "--max-search-results", dest="max_search_results", help="maximum number of search results stored",
@@ -70,11 +73,18 @@ def extract_zim(output_dir):
         logger.info("Adding additional files...")
         if args.add_files != '':
             run_command(f"cp -r {args.add_files}/* {output_dir}")
-
+        
         if args.search_index:
             logger.info("Creating search index...")
             run_command(f"docker run --rm -e RUST_LOG={args.log_level} -u{os.getuid()} -v \"{abspath(output_dir)}:/volume\" preparer" \
                 f" /root/preparer/target/release/indexer -m {args.max_search_results} /volume/A /volume/search")
+
+        if args.enhance_files:
+            if args.input_dir is None:
+                source = args.zim_url if args.zim_url else args.zim_file
+                run_command(f"sum=`sha256sum {input_dir}/input.zim | awk '{{print $1}}'`; find {output_dir}/A -type f | "\
+                    f"while read f; do {{ echo; echo \"<!--\"; echo {source} SHA256=$sum; echo {args.enhance_files_more}; echo \"-->\"; }} >> \"$f\"; done")
+
         if args.brotli:
             logger.info("Compressing files (inplace)...")
             run_command(f"docker run --rm -e RUST_LOG={args.log_level} -u{os.getuid()} -v \"{abspath(output_dir)}:/volume\" preparer" \
