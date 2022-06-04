@@ -5,6 +5,7 @@ import logging
 from shutil import copyfile
 from os.path import abspath
 import sys, os, subprocess, requests
+from tkinter import N
 from time import sleep
 from tempfile import TemporaryDirectory
 import argparse
@@ -13,15 +14,15 @@ parser = argparse.ArgumentParser(description="Extract ZIM archive and/or upload 
 parser.add_argument("-l", "--log-level", dest="log_level", help="log level (DEBUG, INFO, WARNING, ERROR, CRITICAL or a number)")
 parser.add_argument("-F", "--add-files", dest="add_files", help="files to add", default="static")
 parser.add_argument("-H", "--enhance-files", dest="enhance_files", help="add a comment to bottom", action=argparse.BooleanOptionalAction)
-parser.add_argument("-M", "--enhance-files-more", dest="enhance_files_more", help="add the specified text in bottom comment", metavar="TEXT", default='')
+parser.add_argument("-M", "--enhance-files-more", dest="enhance_files_more", help="add the specified text in bottom comment", metavar="TEXT", nargs='?')
 parser.add_argument("-S", "--search", dest="search_index", help="create search index in search/", action=argparse.BooleanOptionalAction)
 parser.add_argument("-B", "--brotli", dest="brotli", help="compress files with Brotli (inplace)", action=argparse.BooleanOptionalAction)
 parser.add_argument("-m", "--max-search-results", dest="max_search_results", help="maximum number of search results stored",
                     default=500)
 subparsers = parser.add_subparsers(dest='command', help="the operation to perform")
 group = parser.add_mutually_exclusive_group(required=True)
-group.add_argument("-f", "--zim-file", dest="zim_file", help="ZIM file for extraction")
-group.add_argument("-u", "--zim-url", dest="zim_url", help="ZIM URL to download and extract")
+group.add_argument("-f", "--zim-file", dest="zim_file", help="ZIM file for extraction", nargs='?')
+group.add_argument("-u", "--zim-url", dest="zim_url", help="ZIM URL to download and extract", nargs='?')
 group.add_argument("-i", "--input-dir", dest="input_dir", help="input directory for upload to Swarm", metavar="DIR")
 parser_extract = subparsers.add_parser('extract', help="extract from ZIM")
 parser_extract.add_argument("-o", "--output-dir", dest="output_dir", help="output directory", metavar="DIR")
@@ -108,7 +109,7 @@ def upload(directory):
         price_in_bzz_per_block_second = int(res.json()["currentPrice"])
         total_size_in_blocks = int( subprocess.check_output(f"du -s -B 4096 {directory} | awk '{{print $1}}'", shell=True) )
         cost_in_bzz = total_size_in_blocks * price_in_bzz_per_block_second * int(args.keepalive_seconds) / 5
-        depth = 20
+        depth = 28  # terabyte data
         amount = int(cost_in_bzz / (2**depth)) + 1
         url = f"http://localhost:1635/stamps/{amount}/{depth}"
         print(url)
@@ -133,19 +134,23 @@ def upload(directory):
             headers["Swarm-Index-Document"] = args.index_document
         if args.error_document is not None:
             headers["Swarm-Error-Document"] = args.error_document
-        res = requests.post("http://localhost:1633/bzz", data=tar.stdout, headers=headers)
-        if res.status_code != 400:
-            sys.stdout.write(log_line)
-            file_identificator = (args.zim_file if args.zim_file else args.zim_url) \
-                if args.zim_file or args.zim_url else args.input_dir
-            uploaded_reference = res.json()['reference']
-            log_line = f"{file_identificator} {uploaded_reference}\n"
-            if args.uploads_log:
-                with open(args.uploads_log, 'a') as uploads_log:
-                    uploads_log.write(log_line)
-            break
+        try:
+            res = requests.post("http://localhost:1633/bzz", data=tar.stdout, headers=headers)
+        except requests.exceptions.ConnectionError:  # tar disconnected
+            logger.info('tar disconnected')
         else:
-            logger.debug(res.json()["message"])
+            if 200 <= res.status_code < 300:
+                file_identificator = (args.zim_file if args.zim_file else args.zim_url) \
+                    if args.zim_file or args.zim_url else args.input_dir
+                uploaded_reference = res.json()['reference']
+                log_line = f"{file_identificator} {uploaded_reference}\n"
+                sys.stdout.write(log_line)
+                if args.uploads_log:
+                    with open(args.uploads_log, 'a') as uploads_log:
+                        uploads_log.write(log_line)
+                break
+            else:
+                logger.info(res.json()["message"])
         sleep(1.0)
 
     while True:
@@ -156,6 +161,7 @@ def upload(directory):
         logger.info(f"fotal={total} processed={processed} synced={synced}")
         if synced == total:
             break
+        sleep(1.0)
 
 if args.command == 'extract':
     extract_zim(args.output_dir)
