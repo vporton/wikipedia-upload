@@ -63,10 +63,9 @@ def extract_zim(output_dir):
         os.system(f"docker build -t zim-tools -f Dockerfile.zim-tools .")
         logger.info(f"Starting zimdump extraction to {output_dir}...")
         os.system(
-            f"docker run -u{os.getuid()} --name zimdump -v \"{abspath(input_dir)}:/in\" -v \"{abspath(output_dir)}:/out\" zim-tools " \
+            f"docker run --rm true -u{os.getuid()} -v \"{abspath(input_dir)}:/in\" -v \"{abspath(output_dir)}:/out\" zim-tools " \
                 f"/usr/local/bin/zimdump dump --dir=/out /in/input.zim")
         # TODO: Fix https://github.com/openzim/zim-tools/issues/303 and make Bee understand redirects, then add `--redirect` here:
-        os.system(f"docker rm -f zimdump")
         os.system(f"rm -rf {output_dir}/X")  # Remove useless search indexes.
 
         if args.add_files != '':
@@ -75,14 +74,12 @@ def extract_zim(output_dir):
         os.system(f"docker build -t preparer -f Dockerfile.preparer .")
         if args.search_index:
             logger.info("Creating search index...")
-            os.system(f"docker run -e RUST_LOG={args.log_level} -u{os.getuid()} --name preparer -v \"{abspath(output_dir)}:/volume\" preparer" \
+            os.system(f"docker run --rm true -e RUST_LOG={args.log_level} -u{os.getuid()} -v \"{abspath(output_dir)}:/volume\" preparer" \
                 f" /root/preparer/target/release/indexer -m {args.max_search_results} /volume/A /volume/search")
-            os.system(f"docker rm -f preparer")
         if args.brotli:
             logger.info("Compressing files (inplace)...")
-            os.system(f"docker run -e RUST_LOG={args.log_level} -u{os.getuid()} --name preparer -v \"{abspath(output_dir)}:/volume\" preparer" \
+            os.system(f"docker run --rm true -e RUST_LOG={args.log_level} -u{os.getuid()} -v \"{abspath(output_dir)}:/volume\" preparer" \
                 f" /root/preparer/target/release/brotler /volume")
-            os.system(f"docker rm -f preparer")
 
 def extract_and_upload():
     with TemporaryDirectory() as tmpdir:
