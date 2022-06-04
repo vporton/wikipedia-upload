@@ -17,6 +17,11 @@ Don't forget to fund the Bee Swarm wallet with both xDai and BZZ.
 Don't forget to connect `/root/.bee` to your volume directory, otherwise the
 files (including the funded wallet will disappear).
 
+If you choose to use my Bee container, run (with addition to correct volume):
+```sh
+docker build -t bee -f Dockerfile.bee .
+```
+
 Build Docker images by
 ```sh
 ./build.sh
