@@ -1,6 +1,5 @@
 FROM ubuntu:22.10
 
-ENV BEE_CLEF_CHAIN_ID=100
 
 RUN apt -y update
 RUN apt -y install wget git make golang-1.17-go
@@ -15,6 +14,7 @@ RUN update-alternatives --install /usr/bin/go go /usr/lib/go-1.17/bin/go 50
 # WORKDIR /root
 # RUN rm -rf go1.18.3.src.tar.gz go
 
+# ENV BEE_CLEF_CHAIN_ID=100
 # WORKDIR /root
 # RUN wget https://github.com/ethersphere/bee-clef/releases/download/v0.12.0/bee-clef_0.12.0_amd64.deb
 # RUN dpkg -i bee-clef_0.12.0_amd64.deb
