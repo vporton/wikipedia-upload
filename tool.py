@@ -68,6 +68,7 @@ def extract_zim(output_dir):
         # TODO: Fix https://github.com/openzim/zim-tools/issues/303 and make Bee understand redirects, then add `--redirect` here:
         os.system(f"rm -rf {output_dir}/X")  # Remove useless search indexes.
 
+        logger.info("Adding additional files...")
         if args.add_files != '':
             os.system(f"cp -r {args.add_files}/* {output_dir}")
 
