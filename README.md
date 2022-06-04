@@ -100,7 +100,34 @@ It has two buttons "Open article" and "Search". Search performs set intersection
 indexes for typed words (searching subwords is not supported). Each index contains all
 pages with this exact word but no more pages that the value specified by `-m`, `--max-search-results`.
 
-1. Add `Content-Encoding: br` by a Nginx container.
+TODO: Add `Content-Encoding: br` by a Nginx container.
+
+## Technicals
+
+It is a system of Python and sh scripts and two Docker containers:
+
+`preparer` contains two commands developed by me:
+
+- `indexer` that creates a word index
+- `brotler` that compress every file except of symlinks in a directory recursively
+
+`zim-tools` contains the third-party package [ZIM tools](https://github.com/openzim/zim-tools).
+
+The actions sequence (some elements are excluded dependently on command line options):
+
+- download ZIM
+- extract ZIM by `zimdump` from ZIM tools Docker container
+- remove the directory `X` containing indexes for dynamic sites
+- add additional files (`index.html` and `error.html`)
+- create a lighweight search index by `indexer` executable from `preparer` Docker container
+- enhance files (add the source ZIM location and its SHA-256 sum and optional user data)
+- compress files inplace by `brotler` executable from `preparer` Docker container
+- calculate the amount of postmarks we need, using `/chainstate` _debug_ API of Bee
+- create Bee's batch ID and tag
+- upload the directory through Bee's tar interface
+- the previous operation repeates until success (because batch ID is available only after a delay)
+- add uploaded reference to `uploads.log` file
+- wait till synced == total
 
 ## Old ideas
 
