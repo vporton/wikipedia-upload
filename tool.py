@@ -65,6 +65,7 @@ def extract_zim(output_dir):
         if args.brotli:
             os.system(f"docker run --name preparer -v \"{abspath(output_dir)}:/volume\" preparer" \
                 f" /root/preparer/target/release/brotler /volume")
+        os.system(f"docker rm -f preparer")
         os.system(f"sudo chown -R `id -u`:`id -g` {output_dir}")  # hack
 
 def extract_and_upload():

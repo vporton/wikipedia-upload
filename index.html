@@ -5,44 +5,58 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Wikipedia on Swarm</title>
     <script>
+      function safe_tags(str) {
+          return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      }
       function openArticle(event) {
-        document.getElementById('frame').src = 'A/' + encodeURIComponent(document.getElementById('entry').value);
+        const url = 'A/' + encodeURIComponent(document.getElementById('entry').value.replace(/ +/g, '_'));
+        document.getElementById('frame').src = url;
         event.preventDefault();
       }
-      function searchArticle(event) {
-        let words = document.getElementById('entry').value.split('\W')
+      async function searchArticle(event) {
+        let words = document.getElementById('entry').value.split(/\s+/)
           .filter(w => w !== "").map(w => w.toLowerCase());
+        console.log('Words:', words)
         if(!words.length) {
           event.preventDefault();
           return;
         }
 
         let tasks = words.map(w => {
-          fetch('search/' + encodeURIComponent(w))
-            .then(res => res.text())
-            .then(text => {
-              pages = text.split('\0')
-              --pages.length; // remove empty string at end
-              return new Set(pages);
-            })
+          return (async() => {
+            const res = await fetch('search/' + encodeURIComponent(w));
+            const text = await res.text();
+            pages = text.split('\0');
+            --pages.length; // remove empty string at end
+            return new Set(pages);
+          })()
         });
-        const sets = Promise.all(tasks);
-        let set = sets[0];
-        for(let i = 1; i != sets.length; ++i) {
-          const set2 = sets[i];
-          set = new Set([...set].filter(e => set2.has(e)));
-        }
+
+        const set = await Promise.all(tasks).then(sets => {
+          let set = sets[0];
+          for(let i = 1; i != sets.length; ++i) { // TODO: Sort by length to be more efficient.
+            const set2 = sets[i];
+            set = new Set([...set].filter(e => set2.has(e)));
+          }
+          return set;
+        }, e => new Set());
 
         const ul = document.getElementById('searchResults');
-        for(;;) {
-          const child = e.lastElementChild;
-          if(!child) break;
-          ul.removeChild(child);
-        }
-        for(let name of set) {
+        // for(;;) {
+        //   const child = ul.lastElementChild;
+        //   if(!child) break;
+        //   ul.removeChild(child);
+        // }
+        let html = "";
+        set.forEach(name => {
           const link = `A/${encodeURIComponent(name)}`;
-          ul.innerHTML += `<li><a href="${link}">name</a></li>`;
-        }
+          // Separate function does not work:
+          const onclick = `document.getElementById('frame').style.display = 'block';
+document.getElementById('searchResults').style.display = 'none';`;
+
+          html += `<li><a href="${link}" onclick="${onclick}" target="frame">${safe_tags(name.replace(/_/g, " "))}</a></li>`;
+        });
+        ul.innerHTML = html;
 
         document.getElementById('frame').style.display = 'none';
         document.getElementById('searchResults').style.display = 'block';
@@ -58,13 +72,14 @@
         <form action="#" onsubmit="openArticle(event)">
           <p style="display: flex"><input type="text" id="entry" style="width: 100%"/>
             <span>&nbsp;</span>
-            <input type="submit" value="Open article"/></p>
+            <input type="submit" value="Open article"/>
+            <span>&nbsp;</span>
             <input type="button" onclick="searchArticle(event)" value="Search"/>
           </p>
         </form>
       </header>
       <div id="area" style="width: 100%; height: 100%">
-        <iframe src="about:blank" id="frame" style="width: 100%; height: 100%; border: 0px"></iframe>
+        <iframe src="about:blank" id="frame" name="frame" style="width: 100%; height: 100%; border: 0px"></iframe>
         <ul id="searchResults" style="display: none; overflow: scroll"></ul>
       </div>
     </div>
