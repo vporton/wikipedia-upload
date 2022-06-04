@@ -1,21 +1,109 @@
-Algorithm on trigger:
+# Wikipedia & ZIM uploader
 
-1. Download the ZIM.
+## Installation
 
-1. Extract ("zimdump dump") it by Docker image with zim-tools.
+Prerequistes:
+* sh (tested with Bash)
+* tar
+* Python 3
 
-1. Brotli all files.
+Do the following (in any order):
 
-1. Start Docker with Bee.
+Start a Bee node on localhost. Debug port must be enabled (unless for upload
+you specify existing batch ID by `--batch-id`). You can use my `Dockerfile.bee`.
 
-1. Modify `.tar` upload for:
-   Symlinks will be uploaded with `Content-Type: text/x-redirect; charset=utf-8`.
+Build Docker images by
+```sh
+./build.sh
+```
 
-1. Output to terminal `synced`!=`total` until they equal.
+## Command line
 
-1. Create `/bzz/x-redirect` endpoint supporting `text/x-redirect`.
+```
+$ ./tool.py -h
+usage: tool.py [-h] [-l LOG_LEVEL] [-F ADD_FILES] [-H | --enhance-files | --no-enhance-files] [-M TEXT] [-S | --search | --no-search] [-B | --brotli | --no-brotli] [-m MAX_SEARCH_RESULTS]
+               (-f ZIM_FILE | -u ZIM_URL | -i DIR)
+               {extract,upload} ...
+
+Extract ZIM archive and/or upload files to Swarm
+
+positional arguments:
+  {extract,upload}      the operation to perform
+    extract             extract from ZIM
+    upload              upload to Swarm (after extraction if ZIM file specified)
+
+options:
+  -h, --help            show this help message and exit
+  -l LOG_LEVEL, --log-level LOG_LEVEL
+                        log level (DEBUG, INFO, WARNING, ERROR, CRITICAL or a number)
+  -F ADD_FILES, --add-files ADD_FILES
+                        files to add or empty string to add no files
+  -H, --enhance-files, --no-enhance-files
+                        add a comment to bottom
+  -M TEXT, --enhance-files-more TEXT
+                        add the specified text in bottom comment
+  -S, --search, --no-search
+                        create search index in search/
+  -B, --brotli, --no-brotli
+                        compress files with Brotli (inplace)
+  -m MAX_SEARCH_RESULTS, --max-search-results MAX_SEARCH_RESULTS
+                        maximum number of search results stored
+  -f ZIM_FILE, --zim-file ZIM_FILE
+                        ZIM file for extraction
+  -u ZIM_URL, --zim-url ZIM_URL
+                        ZIM URL to download and extract
+  -i DIR, --input-dir DIR
+                        input directory for upload to Swarm
+$ ./tool.py extract -h
+usage: tool.py extract [-h] [-o DIR]
+
+options:
+  -h, --help            show this help message and exit
+  -o DIR, --output-dir DIR
+                        output directory
+$ ./tool.py upload -h
+usage: tool.py upload [-h] (-s SECONDS | -b BATCH_ID) [-I INDEX_DOCUMENT] [-E ERROR_DOCUMENT]
+
+options:
+  -h, --help            show this help message and exit
+  -s SECONDS, --keepalive-seconds SECONDS
+                        keep swarm alive for at least about this
+  -b BATCH_ID, --batch-id BATCH_ID
+                        use batch ID to upload (creates one if not present in command line)
+  -I INDEX_DOCUMENT, --index-doc INDEX_DOCUMENT
+                        index document name
+  -E ERROR_DOCUMENT, --error-doc ERROR_DOCUMENT
+                        error document name
+```
+
+In `extract` mode it does not upload to Swarm, but just creates a directory for testing.
+
+`-F` or `--add-files` allows to specify additional files to upload. By default `static/`
+subdirectory (not including hidden files) of current directory is added.
+To specify index and error files use `-I` and `-E`.
+
+`-H`, `--enhance-files` appends to every HTML file in `A/` a comment with name and hash
+of the ZIM file. If can add additional information to this comment by `--enhance-files-more`.
+
+`-m`, `--max-search-results` See _Usage_.
+
+## Usage
+
+Open the uploaded hash (also stored in `uploads.log` in the current directory) to view.
+
+It has two buttons "Open article" and "Search". Search performs set intersection of
+indexes for typed words (searching subwords is not supported). Each index contains all
+pages with this exact word but no more pages that the value specified by `-m`, `--max-search-results`.
 
 1. Add `Content-Encoding: br` by a Nginx container.
+
+## Old ideas
+
+I considered to modify `.tar` so that
+symlinks would be uploaded with `Content-Type: text/x-redirect; charset=utf-8`.
+Then to modify Bee (Create `/bzz/x-redirect` endpoint) to serve this content type as a redirect.
+But it is not worth as Wikipedia HTML redirect files anyway fit into one block.
+Also zim-tools `zimdump` has a [bug](https://github.com/openzim/zim-tools/issues/303).
 
 At first, it looks like we should use direct upload (`Swarm-Deferred-Upload: false`),
 but if we want to upload 1000 files in one block, we would need open 1000 connections.
@@ -24,6 +112,6 @@ Alternatively, we can assign a tag to every `bzz-raw` upload, but it seems unnec
 (I suppose that uploading many chunks to local node is a reliable operation and the
 need to reupload is seldom.)
 
-TODO: https://github.com/ethersphere/swarm-cli/blob/ec496a220bffd024f9e3896abd96a834032b7200/src/command/upload.ts#L272
+Check code: https://github.com/ethersphere/swarm-cli/blob/ec496a220bffd024f9e3896abd96a834032b7200/src/command/upload.ts#L272
 
 Debug port must be open unless you specify existing `--batch-id`.
