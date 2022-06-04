@@ -20,6 +20,7 @@ files (including the funded wallet will disappear).
 If you choose to use my Bee container, run (with addition to correct volume):
 ```sh
 docker build -t bee -f Dockerfile.bee .
+docker run -d --name bee bee
 ```
 
 Build Docker images by
@@ -121,7 +122,7 @@ WARNING: The proxy MUST serve HTTPS, Brotli is not supported over HTTP.
 Nginx config excerpt:
 ```nginx
 proxy_pass http://localhost:1633/bzz/;
-proxy_set_header Content-Encoding br;
+add_header Content-Encoding br;
 ```
 
 Apache config excerpt:
