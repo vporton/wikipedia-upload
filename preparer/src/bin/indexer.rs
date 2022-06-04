@@ -147,9 +147,16 @@ fn index_file(path: &Path, args: &Args) -> Result<(), MyError> {
             let rel_path = path.strip_prefix(Path::new(args.input_dir.as_str()))?;
             let output_path = Path::new(args.output_dir.as_str()).join(Path::new(word.as_str()));
             // Ignore "File name too long" error:
-            if let Ok(mut file) = File::options().create(true).append(true).open(output_path) {
-                let s = rel_path.to_str().ok_or(MyUnicodeError::new())?.to_string() + "\0";
-                file.write(s.as_bytes())?;
+            match File::options().create(true).append(true).open(output_path) {
+                Ok(mut file) => {
+                    let s = rel_path.to_str().ok_or(MyUnicodeError::new())?.to_string() + "\0";
+                    file.write(s.as_bytes())?;
+                }
+                Err(err) => {
+                    if err.raw_os_error().unwrap() != 36 { // Filename too long // TODO: Non-Linux systems
+                        Err::<_, MyError>(err.into())?;
+                    }
+                }
             }
         }
     }
