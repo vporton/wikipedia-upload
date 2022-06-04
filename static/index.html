@@ -9,6 +9,8 @@
           return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
       }
       function openArticle(event) {
+        document.getElementById('frame').style.display = 'block';
+        document.getElementById('searchResults').style.display = 'none';
         const url = 'A/' + encodeURIComponent(document.getElementById('entry').value.replace(/ +/g, '_'));
         document.getElementById('frame').src = url;
         event.preventDefault();
