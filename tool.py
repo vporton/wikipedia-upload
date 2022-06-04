@@ -143,14 +143,14 @@ def upload(directory):
                 file_identificator = (args.zim_file if args.zim_file else args.zim_url) \
                     if args.zim_file or args.zim_url else args.input_dir
                 uploaded_reference = res.json()['reference']
-                log_line = f"{file_identificator} {uploaded_reference}\n"
+                log_line = f"{file_identificator} reference={uploaded_reference} batchID={batch_id} tag={tag}\n"
                 sys.stdout.write(log_line)
                 if args.uploads_log:
                     with open(args.uploads_log, 'a') as uploads_log:
                         uploads_log.write(log_line)
                 break
             else:
-                logger.debug(res.json()["message"])
+                logger.info(res.json()["message"])
         sleep(1.0)
 
     while True:
@@ -158,7 +158,7 @@ def upload(directory):
         total = res.json()['total']
         processed = res.json()['processed']
         synced = res.json()['synced']
-        logger.debug(f"total={total} processed={processed} synced={synced}")
+        logger.info(f"total={total} processed={processed} synced={synced}")
         if synced == total:
             break
         sleep(1.0)
