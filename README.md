@@ -106,6 +106,24 @@ pages with this exact word but no more pages that the value specified by `-m`, `
 
 TODO: Add `Content-Encoding: br` by a Nginx container.
 
+### View files
+
+If files are not Brotli-compressed, just open the BZZ URL.
+
+If the files are Brotli-compressed, you can view them only through a special proxy.
+WARNING: The proxy MUST serve HTTPS, Brotli is not supported over HTTP.
+
+Nginx config excerpt:
+```nginx
+proxy_pass http://localhost:1633/bzz/;
+proxy_set_header Content-Encoding br;
+```
+
+Apache config excerpt:
+```apache
+ProxyPass "/" "http://localhost:1633/bzz/"
+```
+
 ## Technicals
 
 It is a system of Python and sh scripts and two Docker containers:
