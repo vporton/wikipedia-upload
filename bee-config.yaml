@@ -9,7 +9,7 @@ cache-capacity: "1000000"
 cache-retrieval: true
 chain-enable: true
 chequebook-enable: true
-clef-signer-enable: true
+clef-signer-enable: false
 clef-signer-endpoint: "/var/lib/bee-clef/clef.ipc"
 clef-signer-ethereum-address: ""
 config: /home/porton/.bee.yaml
