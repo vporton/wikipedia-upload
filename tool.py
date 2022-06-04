@@ -37,6 +37,18 @@ if args.command == 'extract' and args.input_dir is not None:
     os.exit(1)
 
 logging.basicConfig(level=args.log_level or logging.INFO)
+logger = logging.getLogger(__name__)
+
+def CommandError(Exception):
+    """Error running shell command"""
+
+    def __init__(self, command):
+        self.command = command
+        self.message = f"Error running shell command: {command}"
+
+def run_command(command):
+    if os.system(command) != 0:
+        raise CommandError(command)
 
 def extract_zim(output_dir):
     with TemporaryDirectory() as input_dir:
@@ -49,7 +61,7 @@ def extract_zim(output_dir):
         os.mkdir(output_dir)
 
         os.system(f"docker build -t zim-tools -f Dockerfile.zim-tools .")
-        logging.info(f"Starting zimdump extraction to {output_dir}...")
+        logger.info(f"Starting zimdump extraction to {output_dir}...")
         os.system(
             f"docker run -u{os.getuid()} --name zimdump -v \"{abspath(input_dir)}:/in\" -v \"{abspath(output_dir)}:/out\" zim-tools " \
                 f"/usr/local/bin/zimdump dump --dir=/out /in/input.zim")
@@ -62,13 +74,15 @@ def extract_zim(output_dir):
 
         os.system(f"docker build -t preparer -f Dockerfile.preparer .")
         if args.search_index:
-            logging.info("Creating search index...")
-            os.system(f"docker run -u{os.getuid()} --name preparer -v \"{abspath(output_dir)}:/volume\" preparer" \
+            logger.info("Creating search index...")
+            os.system(f"docker run -e RUST_LOG={args.log_level} -u{os.getuid()} --name preparer -v \"{abspath(output_dir)}:/volume\" preparer" \
                 f" /root/preparer/target/release/indexer -m {args.max_search_results} /volume/A /volume/search")
+            os.system(f"docker rm -f preparer")
         if args.brotli:
-            os.system(f"docker run -u{os.getuid()} --name preparer -v \"{abspath(output_dir)}:/volume\" preparer" \
+            logger.info("Compressing files (inplace)...")
+            os.system(f"docker run -e RUST_LOG={args.log_level} -u{os.getuid()} --name preparer -v \"{abspath(output_dir)}:/volume\" preparer" \
                 f" /root/preparer/target/release/brotler /volume")
-        os.system(f"docker rm -f preparer")
+            os.system(f"docker rm -f preparer")
 
 def extract_and_upload():
     with TemporaryDirectory() as tmpdir:
@@ -87,12 +101,12 @@ def upload(directory):
         res = requests.post(url)
         batch_id = res.json()["batchID"]
 
-    logging.info("Creating an upload tag...")
+    logger.info("Creating an upload tag...")
     res = requests.post("http://localhost:1633/tags")
     tag = res.json()["uid"]
-    logging.info(f"Upload tag: {tag}")
+    logger.info(f"Upload tag: {tag}")
 
-    logging.info("Starting TAR upload...")
+    logger.info("Starting TAR upload...")
     while True:  # loop until batch ID is available
         tar = subprocess.Popen(f"tar -C {directory} -cf - .", shell=True, stdout=subprocess.PIPE)
         headers = {
@@ -116,7 +130,7 @@ def upload(directory):
                 sys.stdout.write(log_line)
             break
         else:
-            logging.debug(res.json()["message"])
+            logger.debug(res.json()["message"])
         sleep(1.0)
 
     while True:
@@ -124,7 +138,7 @@ def upload(directory):
         total = res.json()['total']
         processed = res.json()['processed']
         synced = res.json()['synced']
-        logging.info(f"fotal={total} processed={processed} synced={synced}")
+        logger.info(f"fotal={total} processed={processed} synced={synced}")
         if synced == total:
             break
 
