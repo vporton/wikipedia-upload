@@ -24,8 +24,6 @@ Alternatively, we can assign a tag to every `bzz-raw` upload, but it seems unnec
 (I suppose that uploading many chunks to local node is a reliable operation and the
 need to reupload is seldom.)
 
-TODO: Google Custom Search?
-
 TODO: https://github.com/ethersphere/swarm-cli/blob/ec496a220bffd024f9e3896abd96a834032b7200/src/command/upload.ts#L272
 
 Python logs
