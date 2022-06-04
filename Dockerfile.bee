@@ -24,7 +24,6 @@ WORKDIR /root
 RUN git clone https://github.com/ethersphere/bee
 WORKDIR /root/bee
 RUN git checkout v1.6.0
-# RUN PATH="/root/go/bin:$PATH" make binary
 RUN make binary
 RUN cp dist/bee /usr/local/bin/bee
 RUN rm -rf bee
