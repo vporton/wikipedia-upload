@@ -45,12 +45,11 @@ def extract_zim(output_dir):
         print("Starting zimdump extraction...")
         print(f"OUTPUT={output_dir}")
         os.system(
-            f"docker run --name zimdump -v \"{abspath(input_dir)}:/in\" -v \"{abspath(output_dir)}:/out\" zim-tools " \
+            f"docker run -u{os.getuid()} --name zimdump -v \"{abspath(input_dir)}:/in\" -v \"{abspath(output_dir)}:/out\" zim-tools " \
                 f"/usr/local/bin/zimdump dump --dir=/out /in/input.zim")
         # TODO: Fix https://github.com/openzim/zim-tools/issues/303 and make Bee understand redirects, then add `--redirect` here:
         # os.system(f"docker exec zimtools /usr/local/bin/zimdump dump --dir=/tmp/workdir/out {output_dir}/input.zim")
         os.system(f"docker rm -f zimdump")
-        os.system(f"sudo chown -R `id -u`:`id -g` {output_dir}")  # hack
         os.system(f"rm -rf {output_dir}/X")  # Remove useless search indexes.
 
         # TODO: Files for other sites (not Wikipedia).
@@ -61,13 +60,12 @@ def extract_zim(output_dir):
         if args.search_index:
             print("Creating search index...")
             # FIXME: Specify maximum number of matches.
-            os.system(f"docker run --name preparer -v \"{abspath(output_dir)}:/volume\" preparer" \
+            os.system(f"docker run -u{os.getuid()} --name preparer -v \"{abspath(output_dir)}:/volume\" preparer" \
                 f" /root/preparer/target/release/indexer /volume/A /volume/search")
         if args.brotli:
-            os.system(f"docker run --name preparer -v \"{abspath(output_dir)}:/volume\" preparer" \
+            os.system(f"docker run -u{os.getuid()} --name preparer -v \"{abspath(output_dir)}:/volume\" preparer" \
                 f" /root/preparer/target/release/brotler /volume")
         os.system(f"docker rm -f preparer")
-        os.system(f"sudo chown -R `id -u`:`id -g` {output_dir}")  # hack
 
 def extract_and_upload():
     with TemporaryDirectory() as tmpdir:

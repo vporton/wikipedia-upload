@@ -10,5 +10,6 @@ COPY preparer /root/preparer
 WORKDIR /root/preparer
 RUN rm -rf target
 RUN /root/.cargo/bin/cargo build --release
+RUN chmod a+x /root
 
 VOLUME /volume
