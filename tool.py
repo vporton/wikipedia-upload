@@ -42,12 +42,11 @@ if args.command == 'extract' and args.input_dir is not None:
 logging.basicConfig(level=args.log_level or logging.INFO)
 logger = logging.getLogger("tool.py")
 
-def CommandError(Exception):
+class CommandError(Exception):
     """Error running shell command"""
 
     def __init__(self, command):
-        self.command = command
-        self.message = f"Error running shell command: {command}"
+        super().__init__(f"Error running shell command: {command}")
 
 def run_command(command):
     if os.system(command) != 0:
