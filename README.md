@@ -65,7 +65,7 @@ options:
   -o DIR, --output-dir DIR
                         output directory
 $ ./tool.py upload -h
-usage: tool.py upload [-h] (-s SECONDS | -b BATCH_ID) [-I INDEX_DOCUMENT] [-E ERROR_DOCUMENT]
+usage: tool.py upload [-h] (-s SECONDS | -b BATCH_ID) [-L UPLOADS_LOG] [-I INDEX_DOCUMENT] [-E ERROR_DOCUMENT]
 
 options:
   -h, --help            show this help message and exit
@@ -73,6 +73,8 @@ options:
                         keep swarm alive for at least about this
   -b BATCH_ID, --batch-id BATCH_ID
                         use batch ID to upload (creates one if not present in command line)
+  -L UPLOADS_LOG, --uploads-log-file UPLOADS_LOG
+                        uploads log file (default uploads.log, specify empty string for no uploads log)
   -I INDEX_DOCUMENT, --index-doc INDEX_DOCUMENT
                         index document name
   -E ERROR_DOCUMENT, --error-doc ERROR_DOCUMENT

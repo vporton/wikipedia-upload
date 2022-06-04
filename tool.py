@@ -30,6 +30,8 @@ group = parser_upload.add_mutually_exclusive_group(required=True)
 group.add_argument("-s", "--keepalive-seconds", dest="keepalive_seconds",
                    help="keep swarm alive for at least about this", metavar="SECONDS")
 group.add_argument("-b", "--batch-id", dest="batch_id", help="use batch ID to upload (creates one if not present in command line)")
+parser_upload.add_argument("-L", "--uploads-log-file", dest="uploads_log",
+                           help="uploads log file (default uploads.log, specify empty string for no uploads log)", default="uploads.log")
 parser_upload.add_argument("-I", "--index-doc", dest="index_document", help="index document name")
 parser_upload.add_argument("-E", "--error-doc", dest="error_document", help="error document name")
 
@@ -133,13 +135,14 @@ def upload(directory):
             headers["Swarm-Error-Document"] = args.error_document
         res = requests.post("http://localhost:1633/bzz", data=tar.stdout, headers=headers)
         if res.status_code != 400:
-            with open("uploads.log", 'a') as uploads_log:
-                file_identificator = (args.zim_file if args.zim_file else args.zim_url) \
-                    if args.zim_file or args.zim_url else args.input_dir
-                uploaded_reference = res.json()['reference']
-                log_line = f"{file_identificator} {uploaded_reference}\n"
-                uploads_log.write(log_line)
-                sys.stdout.write(log_line)
+            sys.stdout.write(log_line)
+            file_identificator = (args.zim_file if args.zim_file else args.zim_url) \
+                if args.zim_file or args.zim_url else args.input_dir
+            uploaded_reference = res.json()['reference']
+            log_line = f"{file_identificator} {uploaded_reference}\n"
+            if args.uploads_log:
+                with open(args.uploads_log, 'a') as uploads_log:
+                    uploads_log.write(log_line)
             break
         else:
             logger.debug(res.json()["message"])
