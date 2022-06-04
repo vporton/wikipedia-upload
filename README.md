@@ -133,6 +133,10 @@ The actions sequence (some elements are excluded dependently on command line opt
 - add uploaded reference to `uploads.log` file
 - wait till synced == total
 
+## Bugs
+
+It every time creates a new manifest, because files have different mtimes.
+
 ## Old ideas
 
 I considered to modify `.tar` so that
