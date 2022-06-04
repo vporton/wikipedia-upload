@@ -31,5 +31,5 @@ COPY bee-config.yaml .
 
 ENV more_bee_args=
 VOLUME /root/.bee
-RUN systemctl status bee-clef
+EXPOSE 1633 1634 1635
 CMD bee start --config bee-config.yaml --password 123 $more_bee_args
