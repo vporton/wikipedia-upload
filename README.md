@@ -1,5 +1,7 @@
 # Wikipedia & ZIM uploader
 
+FIXME: It is nondeterministic because of files modification times.
+
 ## Installation
 
 Prerequistes:
