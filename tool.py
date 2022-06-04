@@ -10,6 +10,7 @@ import argparse
 
 parser = argparse.ArgumentParser(description="Extract ZIM archive and/or upload files to Swarm")
 parser.add_argument("-l", "--log-level", dest="log_level", help="log level (DEBUG, INFO, WARNING, ERROR, CRITICAL or a number)")
+parser.add_argument("-F", "--add-files", dest="add_files", help="files to add or empty string to add no files", default="static")
 parser.add_argument("-S", "--search", dest="search_index", help="create search index in search/", action=argparse.BooleanOptionalAction)
 parser.add_argument("-B", "--brotli", dest="brotli", help="compress files with Brotli (inplace)", action=argparse.BooleanOptionalAction)
 parser.add_argument("-m", "--max-search-results", dest="max_search_results", help="maximum number of search results stored",
@@ -56,9 +57,8 @@ def extract_zim(output_dir):
         os.system(f"docker rm -f zimdump")
         os.system(f"rm -rf {output_dir}/X")  # Remove useless search indexes.
 
-        # TODO: Files for other sites (not Wikipedia).
-        os.system(f"cp index.html error.html {output_dir}")
-        # os.system(f"cd {output_dir} && wget https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css")
+        if args.add_files != '':
+            os.system(f"cp -r {args.add_files}/* {output_dir}")
 
         os.system(f"docker build -t preparer -f Dockerfile.preparer .")
         if args.search_index:
