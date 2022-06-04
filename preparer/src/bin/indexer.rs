@@ -9,6 +9,7 @@ use walkdir::WalkDir;
 use maplit::hashset;
 use regex::{Regex, Split};
 use clap::Parser;
+use log::{debug, error};
 
 #[derive(Debug)]
 struct MyUnicodeError;
@@ -69,8 +70,9 @@ impl From<MyUnicodeError> for MyError {
 }
 
 fn main() {
+    env_logger::builder().init();
     if let Err(err) = almost_main() {
-        eprintln!("{err}");
+        error!("{err}");
         process::exit(1);
     }
 }
@@ -124,6 +126,7 @@ mod tests {
 }
 
 fn index_file(path: &Path, args: &Args) -> Result<(), MyError> {
+    debug!("Indexing file {}", path.to_str().unwrap());
     let mut input = File::open(path.clone())?; // uncompressed text file
     let mut cleaned= Vec::new();
     input.read_to_end(&mut cleaned)?;

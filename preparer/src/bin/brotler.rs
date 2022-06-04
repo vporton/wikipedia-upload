@@ -4,6 +4,7 @@ use std::fs::File;
 use std::io::copy;
 use std::path::Path;
 use brotlic::{BrotliEncoderOptions, CompressorWriter, Quality, SetParameterError, WindowSize};
+use log::{debug, error};
 use tempfile::{NamedTempFile, TempPath};
 use walkdir::WalkDir;
 
@@ -43,15 +44,16 @@ impl From<SetParameterError> for MyError {
 }
 
 fn main() {
+    env_logger::builder().init();
     if let Err(err) = almost_main() {
-        eprintln!("{err}");
+        error!("{err}");
         process::exit(1);
     }
 }
 
 fn almost_main() -> Result<(), MyError> {
     if env::args().len() != 2 {
-        eprintln!("Usage: brotler <DIR>");
+        error!("Usage: brotler <DIR>");
         process::exit(1);
     }
     for entry in WalkDir::new(Path::new(&env::args().nth(1).unwrap()))
@@ -61,7 +63,7 @@ fn almost_main() -> Result<(), MyError> {
     {
         let entry = entry?;
         if !entry.file_type().is_dir() {
-            println!("{}", entry.path().to_str().unwrap());
+            debug!("Compressing file {}", entry.path().to_str().unwrap());
             compress_file(&entry.path())?;
         }
     }
