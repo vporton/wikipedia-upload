@@ -54,32 +54,32 @@ def extract_zim(output_dir):
     with TemporaryDirectory() as input_dir:
         if args.zim_url:
             # TODO: Don't place input.zim in current directory.
-            os.system(f"wget -O {input_dir}/input.zim \"{zim_url}\"")
+            run_command(f"wget -O {input_dir}/input.zim \"{zim_url}\"")
         else:
             copyfile(args.zim_file, f"{input_dir}/input.zim")
 
         os.mkdir(output_dir)
 
-        os.system(f"docker build -t zim-tools -f Dockerfile.zim-tools .")
+        run_command(f"docker build -t zim-tools -f Dockerfile.zim-tools .")
         logger.info(f"Starting zimdump extraction to {output_dir}...")
-        os.system(
+        run_command(
             f"docker run --rm -u{os.getuid()} -v \"{abspath(input_dir)}:/in\" -v \"{abspath(output_dir)}:/out\" zim-tools " \
                 f"/usr/local/bin/zimdump dump --dir=/out /in/input.zim")
         # TODO: Fix https://github.com/openzim/zim-tools/issues/303 and make Bee understand redirects, then add `--redirect` here:
-        os.system(f"rm -rf {output_dir}/X")  # Remove useless search indexes.
+        run_command(f"rm -rf {output_dir}/X")  # Remove useless search indexes.
 
         logger.info("Adding additional files...")
         if args.add_files != '':
-            os.system(f"cp -r {args.add_files}/* {output_dir}")
+            run_command(f"cp -r {args.add_files}/* {output_dir}")
 
-        os.system(f"docker build -t preparer -f Dockerfile.preparer .")
+        run_command(f"docker build -t preparer -f Dockerfile.preparer .")
         if args.search_index:
             logger.info("Creating search index...")
-            os.system(f"docker run --rm -e RUST_LOG={args.log_level} -u{os.getuid()} -v \"{abspath(output_dir)}:/volume\" preparer" \
+            run_command(f"docker run --rm -e RUST_LOG={args.log_level} -u{os.getuid()} -v \"{abspath(output_dir)}:/volume\" preparer" \
                 f" /root/preparer/target/release/indexer -m {args.max_search_results} /volume/A /volume/search")
         if args.brotli:
             logger.info("Compressing files (inplace)...")
-            os.system(f"docker run --rm -e RUST_LOG={args.log_level} -u{os.getuid()} -v \"{abspath(output_dir)}:/volume\" preparer" \
+            run_command(f"docker run --rm -e RUST_LOG={args.log_level} -u{os.getuid()} -v \"{abspath(output_dir)}:/volume\" preparer" \
                 f" /root/preparer/target/release/brotler /volume")
 
 def extract_and_upload():
