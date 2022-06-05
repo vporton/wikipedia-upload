@@ -125,8 +125,9 @@ async fn proxy_get(req: HttpRequest, config: Data<Config>, config_more: Data<Con
     let client = reqwest::Client::new();
     let mut headers = reqwest::header::HeaderMap::new();
     for (key, value) in req.headers().iter() {
-        if !config_more.headers_to_remove_set.contains(&key.to_string()) {
-            headers.insert(key.clone(), value.clone());
+        let key = key.to_string().to_lowercase();
+        if !config_more.headers_to_remove_set.contains(&key) {
+            headers.insert(HeaderName::from_bytes(key.as_bytes())?, value.clone());
         }
     }
     for (key, value) in &config_more.headers_to_add {
@@ -145,7 +146,7 @@ async fn main() -> Result<(), MyError> {
     let config2 = config.clone();
     let config3 = config.clone();
     let config_more = ConfigMore {
-        headers_to_remove_set: HashSet::from_iter(config.headers_to_remove.into_iter()),
+        headers_to_remove_set: HashSet::from_iter(config.headers_to_remove.into_iter().map(|k| k.to_lowercase())),
         headers_to_add: config.headers_to_add
             .into_iter()
             .map(|h| -> Result<_, MyError> {
