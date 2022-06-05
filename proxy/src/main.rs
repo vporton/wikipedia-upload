@@ -1,7 +1,9 @@
 use std::fmt::{Display, Formatter};
+use std::io::{BufReader, BufWriter, Read, Write};
 use actix_web::{get, App, HttpServer, Responder, HttpRequest, ResponseError, HttpResponse};
 use actix_web::http::header::ContentType;
-use actix_web::web::Data;
+use actix_web::web::{Buf, Data};
+use brotlic::{DecompressorReader, DecompressorWriter};
 use clap::Parser;
 
 #[derive(Debug)]
@@ -72,7 +74,18 @@ async fn proxy_get(req: HttpRequest, config: Data<Config>)
         .send()
         .await?;
     let mut response_builder = HttpResponse::build(actix_web::http::StatusCode::OK);
-    Ok(response_builder.streaming(reqwest_response.bytes_stream()))
+    let (tx, rx) = std::sync::mpsc::channel();
+    // let mut decoder = DecompressorWriter::new(rx);
+    let mut input = reqwest_response.bytes_stream();
+    let mut decompressor = DecompressorReader::new(stream::iter(rx.into_iter()));
+    let mut decompressor = DecompressorWriter::new(BufWriter::new(tx));
+    let result = response_builder.streaming(decompressor);
+    // FIXME: tokio::spawn
+    loop {
+        let buf = rx.recv()?;
+        decompressor.write(buf);
+    }
+    Ok(result)
 }
 
 #[actix_web::main] // or #[tokio::main]
