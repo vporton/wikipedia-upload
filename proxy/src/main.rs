@@ -119,7 +119,7 @@ struct ConfigMore {
 }
 
 #[get("/{path:.*}")]
-async fn proxy_get(req: HttpRequest, config: Data<Config>, config_more: Data<ConfigMore>, path: String)
+async fn proxy_get(req: HttpRequest, config: Data<Config>, config_more: Data<ConfigMore>)
     -> Result<impl Responder, MyError>
 {
     let client = reqwest::Client::new();
@@ -133,7 +133,7 @@ async fn proxy_get(req: HttpRequest, config: Data<Config>, config_more: Data<Con
     for (key, value) in &config_more.headers_to_add {
         headers.insert(HeaderName::from_bytes(key.as_bytes())?, HeaderValue::from_bytes(value.as_bytes())?);
     }
-    let reqwest_response = client.get(config.upstream.clone() + path.as_str())
+    let reqwest_response = client.get(config.upstream.clone() + req.path())
         .headers(headers.clone())
         .send()
         .await?;
