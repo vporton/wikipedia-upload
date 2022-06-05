@@ -1,8 +1,8 @@
 use std::collections::HashSet;
 use std::fmt::{Display, Formatter};
-use actix_web::{get, web, App, HttpServer, Responder, HttpRequest, ResponseError, HttpResponse};
+use actix_web::{get, App, HttpServer, Responder, HttpRequest, ResponseError, HttpResponse};
 use actix_web::http::header::ContentType;
-use actix_web::web::{Data, Header};
+use actix_web::web::Data;
 use clap::Parser;
 use reqwest::header::{HeaderName, HeaderValue, InvalidHeaderName, InvalidHeaderValue};
 
