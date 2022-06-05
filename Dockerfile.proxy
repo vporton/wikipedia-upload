@@ -1,6 +1,15 @@
-FROM nginx:latest
+FROM ubuntu:22.10
 
-# COPY proxy.conf /etc/nginx/proxy.conf
-COPY proxy.conf /etc/nginx/sites-available/
-RUN mkdir /etc/nginx/sites-enabled/
-RUN ln -s ../sites-available/proxy.conf /etc/nginx/sites-enabled/
+RUN apt -y update
+RUN apt -y install curl gcc
+
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+RUN /root/.cargo/bin/rustup default 1.61.0
+
+COPY proxy /root/proxy
+WORKDIR /root/proxy
+RUN rm -rf target
+RUN /root/.cargo/bin/cargo build --release
+RUN chmod a+x /root
+
+ENV RUST_LOG=
