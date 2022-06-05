@@ -28,6 +28,7 @@ enum MyError {
     WrongHeader(WrongHeaderError),
     InvalidHeaderName(InvalidHeaderName),
     InvalidHeaderValue(InvalidHeaderValue),
+    Actix(actix_web::Error),
 }
 
 impl ResponseError for MyError {
@@ -52,6 +53,7 @@ impl Display for MyError {
             Self::WrongHeader(err) => write!(f, "Header error: {err}"),
             Self::InvalidHeaderName(err) => write!(f, "Header name error: {err}"),
             Self::InvalidHeaderValue(err) => write!(f, "Header value error: {err}"),
+            Self::Actix(err) => write!(f, "Actix error: {err}"),
         }
     }
 }
@@ -83,6 +85,12 @@ impl From<InvalidHeaderName> for MyError {
 impl From<InvalidHeaderValue> for MyError {
     fn from(value: InvalidHeaderValue) -> Self {
         Self::InvalidHeaderValue(value)
+    }
+}
+
+impl From<actix_web::Error> for MyError {
+    fn from(value: actix_web::Error) -> Self {
+        Self::Actix(value)
     }
 }
 
@@ -128,7 +136,7 @@ async fn proxy_get(req: HttpRequest, config: Data<Config>, config_more: Data<Con
         .headers(headers)
         .send()
         .await?;
-    Ok("")
+    Ok(resp.bytes().await?)
 }
 
 #[actix_web::main] // or #[tokio::main]
