@@ -8,6 +8,7 @@ Prerequistes:
 * sh (tested with Bash)
 * tar
 * Python 3
+* a working installation of Bee
 
 Do the following (in any order):
 
