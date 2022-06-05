@@ -124,10 +124,7 @@ async fn main() -> Result<(), MyError> {
                 let p = h.split_once(": ").ok_or::<MyError>(WrongHeaderError::new().into())?;
                 Ok((p.0.to_string(), p.1.to_string()))
             })
-            .collect::<Result<Vec<(String, String)>, MyError>>()?
-            // .into_iter()
-            // .map(|p: (&str, &str)| (p.0.to_string(), p.1.to_string()))
-            // .collect::<Vec<_>>()
+            .collect::<Result<Vec<(String, String)>, MyError>>()?,
     };
 
     Ok(HttpServer::new(move ||
