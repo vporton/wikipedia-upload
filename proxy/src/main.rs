@@ -1,20 +1,37 @@
+use std::collections::HashSet;
 use std::fmt::{Display, Formatter};
 use actix_web::{get, web, App, HttpServer, Responder, HttpRequest, ResponseError, HttpResponse};
 use actix_web::http::header::ContentType;
 use actix_web::web::Data;
 use clap::Parser;
-use reqwest::{Error, StatusCode};
+
+#[derive(Debug)]
+struct WrongHeaderError;
+
+impl WrongHeaderError {
+    pub fn new() -> Self {
+        Self { }
+    }
+}
+
+impl Display for WrongHeaderError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Wrong header specified")
+    }
+}
 
 #[derive(Debug)]
 enum MyError {
     Reqwest(reqwest::Error),
+    IO(std::io::Error),
+    WrongHeader(WrongHeaderError),
 }
 
 impl ResponseError for MyError {
-    fn status_code(&self) -> StatusCode {
+    fn status_code(&self) -> actix_web::http::StatusCode {
         match self {
-            Self::Reqwest(_) => StatusCode::BAD_GATEWAY,
-            _ => StatusCode::INTERNAL_SERVER_ERROR,
+            Self::Reqwest(_) => actix_web::http::StatusCode::BAD_GATEWAY,
+            _ => actix_web::http::StatusCode::INTERNAL_SERVER_ERROR,
         }
     }
     fn error_response(&self) -> HttpResponse {
@@ -28,13 +45,27 @@ impl Display for MyError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Reqwest(err) => write!(f, "Upstream error: {err}"),
+            Self::IO(err) => write!(f, "I/O error: {err}"),
+            Self::WrongHeader(err) => write!(f, "Header error: {err}"),
         }
     }
 }
 
 impl From<reqwest::Error> for MyError {
-    fn from(value: Error) -> Self {
+    fn from(value: reqwest::Error) -> Self {
         Self::Reqwest(value)
+    }
+}
+
+impl From<WrongHeaderError> for MyError {
+    fn from(value: WrongHeaderError) -> Self {
+        Self::WrongHeader(value)
+    }
+}
+
+impl From<std::io::Error> for MyError {
+    fn from(value: std::io::Error) -> Self {
+        Self::IO(value)
     }
 }
 
@@ -56,32 +87,56 @@ struct Config {
     headers_to_add: Vec<String>,
 }
 
-#[get("/{path:.*}")]
-async fn proxy_get(req: HttpRequest, config: Data<Config>, path: String) -> Result<impl Responder, MyError> {
-    let client = reqwest::Client::new();
-    let map = actix_web::http::header::HeaderMap::new();
-    for (key, value) in map.iter() {
+#[derive(Clone)]
+struct ConfigMore {
+    headers_to_remove_set: HashSet<String>,
+    headers_to_add: Vec<(String, String)>,
+}
 
+#[get("/{path:.*}")]
+async fn proxy_get(req: HttpRequest, config: Data<Config>, config_more: Data<ConfigMore>, path: String)
+    -> Result<impl Responder, MyError>
+{
+    let client = reqwest::Client::new();
+    let mut headers = reqwest::header::HeaderMap::new();
+    for (key, value) in req.headers().iter() {
+        if !config_more.headers_to_remove_set.contains(&key.to_string()) {
+            headers.insert(key.clone(), value.clone());
+        }
     }
     let resp = client.get(config.upstream.clone() + path.as_str())
-        // .headers(*req.headers())
+        .headers(headers)
         .send()
         .await?;
-    // let upstream_req = reqwest::Builder();
     Ok("")
 }
 
 #[actix_web::main] // or #[tokio::main]
-async fn main() -> std::io::Result<()> {
+async fn main() -> Result<(), MyError> {
     let config = Config::parse();
     let config2 = config.clone();
+    let config3 = config.clone();
+    let config_more = ConfigMore {
+        headers_to_remove_set: HashSet::from_iter(config.headers_to_remove.into_iter()),
+        headers_to_add: config.headers_to_add
+            .into_iter()
+            .map(|h| -> Result<_, MyError> {
+                let p = h.split_once(": ").ok_or::<MyError>(WrongHeaderError::new().into())?;
+                Ok((p.0.to_string(), p.1.to_string()))
+            })
+            .collect::<Result<Vec<(String, String)>, MyError>>()?
+            // .into_iter()
+            // .map(|p: (&str, &str)| (p.0.to_string(), p.1.to_string()))
+            // .collect::<Vec<_>>()
+    };
 
-    HttpServer::new(move ||
+    Ok(HttpServer::new(move ||
         App::new()
-            .app_data(Data::new(config.clone()))
+            .app_data(Data::new(config3.clone()))
+            .app_data(Data::new(config_more.clone()))
             .service(proxy_get)
     )
         .bind(("127.0.0.1", config2.port))?
         .run()
-        .await
+        .await?)
 }
