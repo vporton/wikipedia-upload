@@ -133,11 +133,15 @@ async fn proxy_get(req: HttpRequest, config: Data<Config>, config_more: Data<Con
     for (key, value) in &config_more.headers_to_add {
         headers.insert(HeaderName::from_bytes(key.as_bytes())?, HeaderValue::from_bytes(value.as_bytes())?);
     }
-    let resp = client.get(config.upstream.clone() + path.as_str())
-        .headers(headers)
+    let reqwest_response = client.get(config.upstream.clone() + path.as_str())
+        .headers(headers.clone())
         .send()
         .await?;
-    Ok(resp.bytes().await?)
+    let mut response_builder = HttpResponse::build(actix_web::http::StatusCode::OK);
+    for (key, value) in headers {
+        response_builder.append_header((key.unwrap(), value));
+    }
+    Ok(response_builder.streaming(reqwest_response.bytes_stream()))
 }
 
 #[actix_web::main] // or #[tokio::main]
