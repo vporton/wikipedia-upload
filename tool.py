@@ -102,7 +102,7 @@ def extract_zim(output_dir):
 
         # Resetting mtimes makes it deterministic.
         logger.info("Resetting files mtime...")
-        run_command(f"docker run --rm -u{os.getuid()} -v \"{abspath(input_dir)}:/in\" -v \"{abspath(output_dir)}:/out\" zim-tools " \
+        run_command(f"docker run --rm -e RUST_LOG={args.log_level} -u{os.getuid()} -v \"{abspath(input_dir)}:/in\" -v \"{abspath(output_dir)}:/out\" preparer " \
                 f"/root/preparer/target/release/copy_mtime /in/input.zim /out")
 
 
