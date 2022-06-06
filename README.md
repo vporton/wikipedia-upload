@@ -136,6 +136,11 @@ run it as
 ```
 to appear on port 8080.
 
+Or you can directly run proxy (in the following example `/bzz` part of the URL is removed by the proxy):
+```sh
+docker run --net=host --rm proxy /root/proxy/target/release/proxy --port 8080 http://localhost:1633/bzz
+```
+
 If you need SSL, chain Bee and two proxies like this:
 ```
 Apache/Nginx <-- ./proxy.sh <-- Bee
