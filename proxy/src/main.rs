@@ -1,13 +1,15 @@
+use std::cmp::min;
 use std::fmt::{Display, Formatter};
-use std::io::{BufReader, BufWriter, Read, Write};
+use std::io::{BufReader, BufWriter, ErrorKind, Read, Write};
+use std::pin::Pin;
 use actix_web::{get, App, HttpServer, Responder, HttpRequest, ResponseError, HttpResponse};
+use actix_web::body::MessageBody;
 use actix_web::http::header::ContentType;
 use actix_web::web::{Buf, Bytes, Data};
-use brotlic::{BrotliDecoder, DecompressorReader, DecompressorWriter};
 use clap::Parser;
 use async_stream::try_stream;
-use brotlic::decode::{DecodeError, DecoderInfo};
-use futures::Stream;
+use futures::executor::block_on;
+use futures::{Stream, TryStreamExt};
 use futures::stream::StreamExt;
 
 #[derive(Debug)]
@@ -15,7 +17,6 @@ enum MyError {
     Reqwest(reqwest::Error),
     IO(std::io::Error),
     Actix(actix_web::Error),
-    Decode(DecodeError),
 }
 
 impl std::error::Error for MyError { }
@@ -23,7 +24,7 @@ impl std::error::Error for MyError { }
 impl ResponseError for MyError {
     fn status_code(&self) -> actix_web::http::StatusCode {
         match self {
-            Self::Reqwest(_) | Self::Decode(_) => actix_web::http::StatusCode::BAD_GATEWAY,
+            Self::Reqwest(_) => actix_web::http::StatusCode::BAD_GATEWAY,
             _ => actix_web::http::StatusCode::INTERNAL_SERVER_ERROR,
         }
     }
@@ -40,7 +41,6 @@ impl Display for MyError {
             Self::Reqwest(err) => write!(f, "Upstream error: {err}"),
             Self::IO(err) => write!(f, "I/O error: {err}"),
             Self::Actix(err) => write!(f, "Actix error: {err}"),
-            Self::Decode(err) => write!(f, "Decode error: {err}"),
         }
     }
 }
@@ -75,12 +75,6 @@ impl From<actix_web::Error> for MyError {
     }
 }
 
-impl From<DecodeError> for MyError {
-    fn from(value: DecodeError) -> Self {
-        Self::Decode(value)
-    }
-}
-
 #[derive(Parser, Debug, Clone)]
 struct Config {
     /// Upstream endpoint, not including slash at the end
@@ -101,36 +95,52 @@ async fn proxy_get(req: HttpRequest, config: Data<Config>)
         .streaming(proxy_get_stream(req, &*config).await?))
 }
 
+struct BytesStreamRead {
+    stream: Pin<Box<dyn futures_core::Stream<Item = std::io::Result<Bytes>>>>,
+    upstream_buf: Vec<u8>,
+}
+
+impl BytesStreamRead {
+    pub fn new(stream: Pin<Box<dyn futures_core::Stream<Item = std::io::Result<Bytes>>>>) -> Self {
+        Self {
+            stream,
+            upstream_buf: Vec::new(),
+        }
+    }
+}
+
+impl Read for BytesStreamRead {
+    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+        if self.upstream_buf.is_empty() {
+            if let Some(upstream_buf) = block_on(async {
+                self.stream.next().await
+            }) {
+                self.upstream_buf = upstream_buf?.to_vec();
+            } else {
+                return Ok(0);
+            }
+        }
+        let size = min(buf.len(), self.upstream_buf.len());
+        buf.clone_from_slice(&self.upstream_buf[.. size]);
+        self.upstream_buf = Vec::from(&self.upstream_buf[size ..]);
+        return Ok(size);
+    }
+}
+
 async fn proxy_get_stream(req: HttpRequest, config: &Config) -> Result<impl Stream<Item = Result<Bytes, MyError>>, MyError> {
     let client = reqwest::Client::new();
     let reqwest_response = client.get(config.upstream.clone() + req.path())
         .send()
         .await?;
     let mut input = reqwest_response.bytes_stream();
-    let mut decompressor = BrotliDecoder::new();
+    let mut input = input.map_err(|e| std::io::Error::new(ErrorKind::InvalidData, e));
+    let mut decompressor = brotli::Decompressor::new(BytesStreamRead::new(Box::pin(input)), 4096);
     // FIXME: tokio::spawn
     Ok(try_stream! {
-        let mut buf2 = [0u8; 4096];
+        let mut buf = [0u8; 4096];
         loop {
-            let buf = input.next().await;
-            match buf {
-                Some(Err(err)) => Err(err)?,
-                Some(Ok(buf)) => {
-                    let mut buf = buf;
-                    loop {
-                        if buf2.is_empty() {
-                            buf2 = [0u8; 4096];
-                        }
-                        let result = decompressor.decompress(&buf, &mut buf2)?;
-                        yield Bytes::copy_from_slice(&buf2 as &[u8]);
-                        buf = buf.slice(result.bytes_read ..);
-                        if result.info == DecoderInfo::Finished {
-                            break;
-                        }
-                    }
-                },
-                None => return, // FIXME
-            }
+            decompressor.read(&mut buf)?;
+            yield Bytes::copy_from_slice(&buf as &[u8]);
         }
     })
 }

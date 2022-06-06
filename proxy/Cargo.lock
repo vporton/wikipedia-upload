@@ -303,22 +303,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "brotlic"
-version = "0.7.0"
-source = "git+https://github.com/vporton/brotlic#86d26bc76fb3d41a2a63dfa7056e8741be02ec1e"
-dependencies = [
- "brotlic-sys",
-]
-
-[[package]]
-name = "brotlic-sys"
-version = "0.2.0"
-source = "git+https://github.com/vporton/brotlic#86d26bc76fb3d41a2a63dfa7056e8741be02ec1e"
-dependencies = [
- "cc",
-]
-
-[[package]]
 name = "bumpalo"
 version = "3.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1109,9 +1093,10 @@ version = "0.1.0"
 dependencies = [
  "actix-web",
  "async-stream",
- "brotlic",
+ "brotli",
  "clap",
  "futures",
+ "futures-core",
  "reqwest",
 ]
 
