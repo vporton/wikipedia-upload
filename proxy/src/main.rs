@@ -2,21 +2,28 @@ use std::fmt::{Display, Formatter};
 use std::io::{BufReader, BufWriter, Read, Write};
 use actix_web::{get, App, HttpServer, Responder, HttpRequest, ResponseError, HttpResponse};
 use actix_web::http::header::ContentType;
-use actix_web::web::{Buf, Data};
-use brotlic::{DecompressorReader, DecompressorWriter};
+use actix_web::web::{Buf, Bytes, Data};
+use brotlic::{BrotliDecoder, DecompressorReader, DecompressorWriter};
 use clap::Parser;
+use async_stream::try_stream;
+use brotlic::decode::{DecodeError, DecoderInfo};
+use futures::Stream;
+use futures::stream::StreamExt;
 
 #[derive(Debug)]
 enum MyError {
     Reqwest(reqwest::Error),
     IO(std::io::Error),
     Actix(actix_web::Error),
+    Decode(DecodeError),
 }
+
+impl std::error::Error for MyError { }
 
 impl ResponseError for MyError {
     fn status_code(&self) -> actix_web::http::StatusCode {
         match self {
-            Self::Reqwest(_) => actix_web::http::StatusCode::BAD_GATEWAY,
+            Self::Reqwest(_) | Self::Decode(_) => actix_web::http::StatusCode::BAD_GATEWAY,
             _ => actix_web::http::StatusCode::INTERNAL_SERVER_ERROR,
         }
     }
@@ -33,6 +40,7 @@ impl Display for MyError {
             Self::Reqwest(err) => write!(f, "Upstream error: {err}"),
             Self::IO(err) => write!(f, "I/O error: {err}"),
             Self::Actix(err) => write!(f, "Actix error: {err}"),
+            Self::Decode(err) => write!(f, "Decode error: {err}"),
         }
     }
 }
@@ -55,6 +63,12 @@ impl From<actix_web::Error> for MyError {
     }
 }
 
+impl From<DecodeError> for MyError {
+    fn from(value: DecodeError) -> Self {
+        Self::Decode(value)
+    }
+}
+
 #[derive(Parser, Debug, Clone)]
 struct Config {
     /// Upstream endpoint, not including slash at the end
@@ -69,23 +83,40 @@ struct Config {
 async fn proxy_get(req: HttpRequest, config: Data<Config>)
     -> Result<impl Responder, MyError>
 {
+    Ok(HttpResponse::Ok()
+        .content_type("application/xml")
+        // .streaming(Box::pin(proxy_get_stream(req, &*config).await?)))
+        .streaming(proxy_get_stream(req, &*config).await?))
+}
+
+async fn proxy_get_stream(req: HttpRequest, config: &Config) -> Result<impl Stream<Item = Result<Bytes, MyError>>, MyError> {
     let client = reqwest::Client::new();
     let reqwest_response = client.get(config.upstream.clone() + req.path())
         .send()
         .await?;
-    let mut response_builder = HttpResponse::build(actix_web::http::StatusCode::OK);
-    let (tx, rx) = std::sync::mpsc::channel();
-    // let mut decoder = DecompressorWriter::new(rx);
     let mut input = reqwest_response.bytes_stream();
-    let mut decompressor = DecompressorReader::new(stream::iter(rx.into_iter()));
-    let mut decompressor = DecompressorWriter::new(BufWriter::new(tx));
-    let result = response_builder.streaming(decompressor);
+    let mut decompressor = BrotliDecoder::new();
     // FIXME: tokio::spawn
-    loop {
-        let buf = rx.recv()?;
-        decompressor.write(buf);
-    }
-    Ok(result)
+    Ok(try_stream! {
+        let mut buf2 = [0u8; 4096];
+        loop {
+            if buf2.is_empty() {
+                buf2 = [0u8; 4096];
+            }
+            let mut buf = input.next().await;
+            loop {
+                if let Some(buf) = buf {
+                    let mut buf = buf?;
+                    let result = decompressor.decompress(&buf, &mut buf2)?;
+                    yield Bytes::copy_from_slice(&buf2 as &[u8]);
+                    // buf = buf.slice(result.bytes_read ..);
+                    if result.info == DecoderInfo::Finished {
+                        break;
+                    }
+                }
+            }
+        }
+    })
 }
 
 #[actix_web::main] // or #[tokio::main]
