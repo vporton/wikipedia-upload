@@ -1,20 +1,16 @@
-use std::cmp::min;
 use std::fmt::{Display, Formatter};
-use std::io::{ErrorKind, Read};
-use std::pin::Pin;
+use std::io::{ErrorKind};
 use actix_web::{get, App, HttpServer, Responder, HttpRequest, ResponseError, HttpResponse};
 use actix_web::http::header::ContentType;
 use actix_web::web::{Bytes, Data};
 use clap::Parser;
 use async_stream::try_stream;
-use futures::executor::block_on;
 use futures::{Stream, TryStreamExt};
 use futures::stream::StreamExt;
 use alloc_stdlib::heap_alloc::HeapPrealloc; // TODO: Should use stdlib.
 use brotli_decompressor::{BrotliDecompressStream, BrotliState};
 use brotli_decompressor::reader::HuffmanCode;
 use brotli_decompressor::reader::BrotliResult;
-#[macro_use]
 extern crate alloc_stdlib;
 
 #[derive(Debug)]
@@ -97,20 +93,6 @@ async fn proxy_get(req: HttpRequest, config: Data<Config>)
     Ok(HttpResponse::Ok()
         .content_type("application/xml")
         .streaming(proxy_get_stream(req, &*config).await?))
-}
-
-struct BytesStreamRead {
-    stream: Pin<Box<dyn futures_core::Stream<Item = std::io::Result<Bytes>>>>,
-    upstream_buf: Vec<u8>,
-}
-
-impl BytesStreamRead {
-    pub fn new(stream: Pin<Box<dyn futures_core::Stream<Item = std::io::Result<Bytes>>>>) -> Self {
-        Self {
-            stream,
-            upstream_buf: Vec::new(),
-        }
-    }
 }
 
 // brotli_decompressor::declare_stack_allocator_struct!(MemPool, heap);
