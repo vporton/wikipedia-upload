@@ -140,6 +140,7 @@ async fn proxy_get_stream(req: HttpRequest, config: &Config) -> Result<impl Stre
             let mut written = 0;
 
             let old_output_offset = output_offset;
+            // FIXME: Need to check `available_in == 0 && available_out == 0`?
             let result = BrotliDecompressStream(
                 &mut available_in, &mut input_offset, &input_buf,
                 &mut available_out, &mut output_offset, &mut output_buf,
