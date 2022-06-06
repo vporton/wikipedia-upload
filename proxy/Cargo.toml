@@ -6,10 +6,13 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+#[build]
+#rustflags = ["-C", "link-args=-fno-common"] # otherwise, doesn't compile with cc (Ubuntu 11.2.0-19ubuntu1) 11.2.0
+
 [dependencies]
 actix-web = "4.0.1"
 reqwest = { version = "0.11.10", features = ["stream"] }
 clap = { version = "3.1.18", features = ["derive"] }
-brotlic = "0.7.0"
+brotlic = { git = "https://github.com/vporton/brotlic" }
 async-stream = "0.3.3"
 futures = "0.3.21"

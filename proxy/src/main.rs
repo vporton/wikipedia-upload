@@ -112,17 +112,18 @@ async fn proxy_get_stream(req: HttpRequest, config: &Config) -> Result<impl Stre
     Ok(try_stream! {
         let mut buf2 = [0u8; 4096];
         loop {
-            if buf2.is_empty() {
-                buf2 = [0u8; 4096];
-            }
-            let mut buf = input.next().await;
+            let buf = input.next().await;
             match buf {
                 Some(Err(err)) => Err(err)?,
-                Some(Ok(mut buf)) => {
+                Some(Ok(buf)) => {
+                    let mut buf = buf;
                     loop {
+                        if buf2.is_empty() {
+                            buf2 = [0u8; 4096];
+                        }
                         let result = decompressor.decompress(&buf, &mut buf2)?;
                         yield Bytes::copy_from_slice(&buf2 as &[u8]);
-                        // buf = buf.slice(result.bytes_read ..);
+                        buf = buf.slice(result.bytes_read ..);
                         if result.info == DecoderInfo::Finished {
                             break;
                         }
