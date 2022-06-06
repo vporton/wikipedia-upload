@@ -156,7 +156,7 @@ def upload(directory):
         processed = res.json()['processed']
         synced = res.json()['synced']
         logger.info(f"total={total} processed={processed} synced={synced}")
-        if synced == total:
+        if synced >= total:
             break
         sleep(1.0)
 
