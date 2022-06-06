@@ -113,14 +113,14 @@ async fn proxy_get_stream(req: HttpRequest, config: &Config) -> Result<impl Stre
         let heap_u32_allocator = HeapPrealloc::<u32>::new_allocator(4096, &mut u32_buffer, |_| {});
         let heap_hc_allocator = HeapPrealloc::<HuffmanCode>::new_allocator(4096, &mut hc_buffer, |_| {});
 
+        let mut brotli_state = BrotliState::new(heap_u8_allocator, heap_u32_allocator, heap_hc_allocator);
+
         let mut output_buf = [0u8; 4096];
         let mut input_buf = Vec::new(); // should be `Bytes` instead?
         let mut available_in = 0;
         let mut available_out = output_buf.len();
         let mut input_offset = 0;
         let mut output_offset = 0;
-
-        let mut brotli_state = BrotliState::new(heap_u8_allocator, heap_u32_allocator, heap_hc_allocator);
 
         loop {
             if available_out == 0 {
