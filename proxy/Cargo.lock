@@ -1092,8 +1092,9 @@ name = "proxy"
 version = "0.1.0"
 dependencies = [
  "actix-web",
+ "alloc-stdlib",
  "async-stream",
- "brotli",
+ "brotli-decompressor",
  "clap",
  "futures",
  "futures-core",

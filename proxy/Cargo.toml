@@ -14,8 +14,10 @@ actix-web = "4.0.1"
 reqwest = { version = "0.11.10", features = ["stream"] }
 clap = { version = "3.1.18", features = ["derive"] }
 #brotlic = { git = "https://github.com/vporton/brotlic" }
-brotli = "3.3.4"
+brotli-decompressor = { version = "2.3.2", features = ["seccomp"] }
 async-stream = "0.3.3"
 futures = "0.3.21"
 futures-core = "0.3.21"
 tokio = "1.19.1"
+#alloc-no-stdlib = "2.0.3"
+alloc-stdlib = "0.2.1"
