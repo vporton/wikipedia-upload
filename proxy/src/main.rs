@@ -1,11 +1,10 @@
 use std::cmp::min;
 use std::fmt::{Display, Formatter};
-use std::io::{BufReader, BufWriter, ErrorKind, Read, Write};
+use std::io::{ErrorKind, Read};
 use std::pin::Pin;
 use actix_web::{get, App, HttpServer, Responder, HttpRequest, ResponseError, HttpResponse};
-use actix_web::body::MessageBody;
 use actix_web::http::header::ContentType;
-use actix_web::web::{Buf, Bytes, Data};
+use actix_web::web::{Bytes, Data};
 use clap::Parser;
 use async_stream::try_stream;
 use futures::executor::block_on;
@@ -132,8 +131,9 @@ async fn proxy_get_stream(req: HttpRequest, config: &Config) -> Result<impl Stre
     let reqwest_response = client.get(config.upstream.clone() + req.path())
         .send()
         .await?;
-    let mut input = reqwest_response.bytes_stream();
-    let mut input = input.map_err(|e| std::io::Error::new(ErrorKind::InvalidData, e));
+    let input = reqwest_response.bytes_stream();
+    let input = input
+        .map_err(|e| std::io::Error::new(ErrorKind::InvalidData, e));
     let mut decompressor = brotli::Decompressor::new(BytesStreamRead::new(Box::pin(input)), 4096);
     // FIXME: tokio::spawn
     Ok(try_stream! {
