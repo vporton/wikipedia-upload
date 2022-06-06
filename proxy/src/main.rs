@@ -113,8 +113,6 @@ async fn proxy_get_stream(req: HttpRequest, config: &Config) -> Result<impl Stre
         let heap_u32_allocator = HeapPrealloc::<u32>::new_allocator(4096, &mut u32_buffer, |_| {});
         let heap_hc_allocator = HeapPrealloc::<HuffmanCode>::new_allocator(4096, &mut hc_buffer, |_| {});
 
-        // let input_buf0 = [0u8; 4096];
-        // let mut input_buf = input_buf0;
         let mut output_buf = [0u8; 4096];
         let mut input_buf = Vec::new(); // should be `Bytes` instead?
         let mut available_in = 0;
