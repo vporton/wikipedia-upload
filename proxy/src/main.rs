@@ -139,6 +139,9 @@ async fn proxy_get_stream(req: HttpRequest, config: &Config) -> Result<impl Stre
     Ok(try_stream! {
         let mut buf = [0u8; 4096];
         loop {
+            if buf.len() == 0 {
+                buf = [0u8; 4096];
+            }
             decompressor.read(&mut buf)?;
             yield Bytes::copy_from_slice(&buf as &[u8]);
         }
