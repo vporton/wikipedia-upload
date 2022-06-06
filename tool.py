@@ -114,7 +114,11 @@ def upload(directory):
         url = f"http://localhost:1635/stamps/{amount}/{depth}"
         print(url)
         res = requests.post(url)
-        batch_id = res.json()["batchID"]
+        try:
+            batch_id = res.json()["batchID"]
+        except KeyError:
+            print(res.json()["message"])
+            sys.exit(1)
 
     logger.info("Creating an upload tag...")
     res = requests.post("http://localhost:1633/tags")
@@ -136,8 +140,8 @@ def upload(directory):
             headers["Swarm-Error-Document"] = args.error_document
         try:
             res = requests.post("http://localhost:1633/bzz", data=tar.stdout, headers=headers)
-        except requests.exceptions.ConnectionError:  # tar disconnected
-            logger.info('tar disconnected')
+        except requests.exceptions.ConnectionError as e:  # tar disconnected
+            logger.info('tar disconnected:', e.__cause__)
         else:
             if 200 <= res.status_code < 300:
                 uploaded_reference = res.json()['reference']
