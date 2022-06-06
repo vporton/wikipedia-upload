@@ -14,10 +14,26 @@ use brotli_decompressor::reader::BrotliResult;
 extern crate alloc_stdlib;
 
 #[derive(Debug)]
+struct BrotliDecodeError;
+
+impl BrotliDecodeError {
+    pub fn new() -> Self {
+        Self { }
+    }
+}
+
+impl Display for BrotliDecodeError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Error decoding Brotli.")
+    }
+}
+
+#[derive(Debug)]
 enum MyError {
     Reqwest(reqwest::Error),
     IO(std::io::Error),
     Actix(actix_web::Error),
+    BrotliDecode(BrotliDecodeError),
 }
 
 impl std::error::Error for MyError { }
@@ -42,6 +58,7 @@ impl Display for MyError {
             Self::Reqwest(err) => write!(f, "Upstream error: {err}"),
             Self::IO(err) => write!(f, "I/O error: {err}"),
             Self::Actix(err) => write!(f, "Actix error: {err}"),
+            Self::BrotliDecode(err) => write!(f, "Brotli error: {err}"),
         }
     }
 }
@@ -58,12 +75,6 @@ impl<T: Into<MyError> + Clone> From<&T> for MyError {
     }
 }
 
-// impl<T: Into<MyError> + Copy> From<&mut T> for MyError {
-//     fn from(value: &mut T) -> Self {
-//         (*value).into()
-//     }
-// }
-
 impl From<std::io::Error> for MyError {
     fn from(value: std::io::Error) -> Self {
         Self::IO(value)
@@ -73,6 +84,12 @@ impl From<std::io::Error> for MyError {
 impl From<actix_web::Error> for MyError {
     fn from(value: actix_web::Error) -> Self {
         Self::Actix(value)
+    }
+}
+
+impl From<BrotliDecodeError> for MyError {
+    fn from(value: BrotliDecodeError) -> Self {
+        Self::BrotliDecode(value)
     }
 }
 
@@ -106,6 +123,7 @@ async fn proxy_get_stream(req: HttpRequest, config: &Config) -> Result<impl Stre
     let mut net_input = net_input
         .map_err(|e| std::io::Error::new(ErrorKind::InvalidData, e));
     Ok(try_stream! {
+        // TODO: Make them global variables?
         let mut u8_buffer = Box::new([0u8; 32 * 1024 * 1024]) as Box<[u8]>;
         let mut u32_buffer = Box::new([0u32; 1024 * 1024]) as Box<[u32]>;
         let mut hc_buffer = Box::new([HuffmanCode::default(); 4 * 1024 * 1024]) as Box<[HuffmanCode]>;
@@ -123,10 +141,6 @@ async fn proxy_get_stream(req: HttpRequest, config: &Config) -> Result<impl Stre
         let mut output_offset = 0;
 
         loop {
-            if available_out == 0 {
-                available_out = output_buf.len();
-                output_offset = 0;
-            }
             if available_in == 0 {
                 let piece = net_input.next().await;
                 available_in = if let Some(piece) = piece {
@@ -137,21 +151,26 @@ async fn proxy_get_stream(req: HttpRequest, config: &Config) -> Result<impl Stre
                 };
                 input_offset = 0;
             }
+            if available_out == 0 {
+                available_out = output_buf.len();
+                output_offset = 0;
+            }
             let mut written = 0;
 
             let old_output_offset = output_offset;
-            // FIXME: Need to check `available_in == 0 && available_out == 0`?
             let result = BrotliDecompressStream(
                 &mut available_in, &mut input_offset, &input_buf,
                 &mut available_out, &mut output_offset, &mut output_buf,
                 &mut written, &mut brotli_state);
             match result {
-                BrotliResult::ResultSuccess | BrotliResult::ResultFailure => { // FIXME: Return error.
-                    break;
-                }
+                BrotliResult::ResultSuccess => yield Bytes::copy_from_slice(&output_buf[old_output_offset .. output_offset]),
+                _ => {},
+            }
+            match result {
+                BrotliResult::ResultSuccess => break,
+                BrotliResult::ResultFailure => return Err::<(), MyError>(BrotliDecodeError::new().into())?,
                 _ => {}
             }
-            yield Bytes::copy_from_slice(&output_buf[old_output_offset .. output_offset]);
         }
     })
 }
