@@ -11,7 +11,8 @@ use futures::executor::block_on;
 use futures::{Stream, TryStreamExt};
 use futures::stream::StreamExt;
 use alloc_stdlib::heap_alloc::HeapPrealloc; // TODO: Should use stdlib.
-use brotli_decompressor::BrotliDecompressStream;
+use brotli_decompressor::{BrotliDecompressStream, BrotliState};
+use brotli_decompressor::reader::HuffmanCode;
 #[macro_use]
 extern crate alloc_stdlib;
 
@@ -122,6 +123,13 @@ async fn proxy_get_stream(req: HttpRequest, config: &Config) -> Result<impl Stre
     let input = input
         .map_err(|e| std::io::Error::new(ErrorKind::InvalidData, e));
     Ok(try_stream! {
+        let mut u8_buffer = Box::new([0u8; 32 * 1024 * 1024]) as Box<[u8]>;
+        let mut u32_buffer = Box::new([0u32; 1024 * 1024]) as Box<[u32]>;
+        let mut hc_buffer = Box::new([HuffmanCode::default(); 4 * 1024 * 1024]) as Box<[HuffmanCode]>;
+        let heap_u8_allocator = HeapPrealloc::<u8>::new_allocator(4096, &mut u8_buffer, |_| {});
+        let heap_u32_allocator = HeapPrealloc::<u32>::new_allocator(4096, &mut u32_buffer, |_| {});
+        let heap_hc_allocator = HeapPrealloc::<HuffmanCode>::new_allocator(4096, &mut hc_buffer, |_| {});
+
         let input_buf0 = [0u8; 4096];
         let mut input_buf = input_buf0;
         let output_buf0 = [0u8; 4096];
@@ -130,15 +138,6 @@ async fn proxy_get_stream(req: HttpRequest, config: &Config) -> Result<impl Stre
         let mut available_out = output_buf0.len();
         let mut input_offset = 0;
         let mut output_offset = 0;
-
-        let mut u8_buffer = Box::new([0; 32 * 1024 * 1024]) as Box<[u8]>;
-        let mut u32_buffer = Box::new([0; 1024 * 1024]) as Box<[u32]>;
-        let mut hc_buffer = [0; 4 * 1024 * 1024];
-        let mut u8_buffer_arb: [u8] = u8_buffer;
-        let mut u8_buffer_boxed = Box::new(u8_buffer);
-        let heap_u8_allocator = HeapPrealloc::<u8>::new_allocator(4096, &mut u8_buffer, 0u8);
-        let heap_u32_allocator = HeapPrealloc::<u32>::new_allocator(4096, &mut u32_buffer, bzero);
-        let heap_hc_allocator = HeapPrealloc::<HuffmanCode>::new_allocator(4096, &mut hc_buffer, bzero);
 
         let mut brotli_state = BrotliState::new(heap_u8_allocator, heap_u32_allocator, heap_hc_allocator);
 
@@ -159,13 +158,13 @@ async fn proxy_get_stream(req: HttpRequest, config: &Config) -> Result<impl Stre
             }
             let mut written;
             let result = BrotliDecompressStream(
-                &mut available_in, &mut input_offset, &input.slice(),
-                &mut available_out, &mut output_offset, &mut output.slice_mut(),
+                &mut available_in, &mut input_offset, &input_buf,
+                &mut available_out, &mut output_offset, &mut output_buf,
                 &mut written, &mut brotli_state);
             if written == 0 {
                 break;
             }
-            yield Bytes::copy_from_slice(&buf[.. bytes]);
+            yield Bytes::copy_from_slice(&output_buf[.. written]);
         }
     })
 }
