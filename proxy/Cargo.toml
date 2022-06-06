@@ -10,7 +10,7 @@ edition = "2021"
 #rustflags = ["-C", "link-args=-fno-common"] # otherwise, doesn't compile with cc (Ubuntu 11.2.0-19ubuntu1) 11.2.0
 
 [dependencies]
-actix-web = "4.0.1"
+actix-web = { version = "4.0.1", features = ["compress-gzip", "compress-brotli", "compress-zstd"] }
 reqwest = { version = "0.11.10", features = ["stream"] }
 clap = { version = "3.1.18", features = ["derive"] }
 #brotlic = { git = "https://github.com/vporton/brotlic" }
