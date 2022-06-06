@@ -40,7 +40,7 @@ def run_command(command):
 
 # Without multiplying by 10 upload stalls.
 run_command(f"{source_dir}/tool.py -F {source_dir}/static -H -M '' -S -B -m 400 -u {url} upload " \
-    f"-s {10*30*24*3600} -I {source_dir}/index.html -E {source_dir}/error.html -L {state_dir}/uploads.log")
+    f"-s {10*30*24*3600} -I index.html -E error.html -L {state_dir}/uploads.log")
 
 with open(f"{state_dir}/last_upload.txt", "w") as f:
     f.write(url)

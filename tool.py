@@ -141,7 +141,7 @@ def upload(directory):
         try:
             res = requests.post("http://localhost:1633/bzz", data=tar.stdout, headers=headers)
         except requests.exceptions.ConnectionError as e:  # tar disconnected
-            logger.info('tar disconnected:', e.__cause__)
+            logger.info('tar disconnected')
         else:
             if 200 <= res.status_code < 300:
                 uploaded_reference = res.json()['reference']
