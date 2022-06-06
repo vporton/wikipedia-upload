@@ -107,7 +107,8 @@ TODO: modify mtimes to be the same as of .zim file.
 
 ## Usage
 
-Open the uploaded hash (also stored in `uploads.log` in the current directory) to view.
+Open the uploaded hash (also stored in `uploads.log` in the current directory or
+location specified by `-L` option) to view.
 
 It has two buttons "Open article" and "Search". Search performs set intersection of
 indexes for typed words (searching subwords is not supported). Each index contains all
