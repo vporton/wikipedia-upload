@@ -79,6 +79,8 @@ def extract_zim(output_dir):
         # TODO: Fix https://github.com/openzim/zim-tools/issues/303 and make Bee understand redirects, then add `--redirect` here:
         run_command(f"rm -rf {output_dir}/X")  # Remove useless search indexes.
 
+        run_command(f"for i in {output_dir}/_exceptions/*; do cp \"$i\" {output_dir}/A/`echo \"$i\" | sed 's@^.*A%2f\\([^/]*\\)$@\\1@'`; done")
+
         if args.add_files is not None:
             logger.info("Adding additional files...")
             run_command(f"cp -r {args.add_files}/* {output_dir}")
@@ -97,6 +99,11 @@ def extract_zim(output_dir):
             logger.info("Compressing files (inplace)...")
             run_command(f"docker run --rm -e RUST_LOG={args.log_level} -u{os.getuid()} -v \"{abspath(output_dir)}:/volume\" preparer" \
                 f" /root/preparer/target/release/brotler /volume")
+
+        logger.info("Resetting files mtime...")
+        run_command(f"docker run --rm -u{os.getuid()} -v \"{abspath(input_dir)}:/in\" -v \"{abspath(output_dir)}:/out\" zim-tools " \
+                f"/root/preparer/target/release/copy_mtime /in/input.zim /out")
+
 
 def extract_and_upload():
     with TemporaryDirectory() as tmpdir:
