@@ -7,7 +7,7 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 RUN /root/.cargo/bin/rustup default 1.61.0
 
 COPY proxy/src /root/proxy/src
-COPY proxy/Cargo.toml proxy/Cargo.lock /root/proxy/Cargo.toml /root/proxy/
+COPY proxy/Cargo.toml proxy/Cargo.lock /root/proxy/
 WORKDIR /root/proxy
 RUN rm -rf target
 RUN /root/.cargo/bin/cargo build --release
