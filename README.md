@@ -117,19 +117,12 @@ TODO: Add `Content-Encoding: br` by a Nginx container.
 
 If files are not Brotli-compressed, just open the BZZ URL.
 
-If the files are Brotli-compressed, you can view them only through a special proxy.
-WARNING: The proxy MUST serve HTTPS, Brotli is not supported over HTTP.
-
-Nginx config excerpt:
-```nginx
-proxy_pass http://localhost:1633/bzz/;
-add_header Content-Encoding br;
+If the files are Brotli-compressed, you can view them only through a special proxy:
+run it as
 ```
-
-Apache config excerpt:
-```apache
-ProxyPass "/" "http://localhost:1633/bzz/"
+./proxy.sh
 ```
+to appear on port 8080.
 
 ## Technicals
 
