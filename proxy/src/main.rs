@@ -117,7 +117,7 @@ struct Config {
     upstream: String,
 
     /// Our HTTP port
-    #[clap(short = 'p', long = "--port")]
+    #[clap(short = 'p', long = "--port", default_value = "8080")]
     port: u16,
 }
 
