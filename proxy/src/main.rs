@@ -51,6 +51,18 @@ impl From<reqwest::Error> for MyError {
     }
 }
 
+impl<T: Into<MyError> + Clone> From<&T> for MyError {
+    fn from(value: &T) -> Self {
+        value.clone().into()
+    }
+}
+
+// impl<T: Into<MyError> + Copy> From<&mut T> for MyError {
+//     fn from(value: &mut T) -> Self {
+//         (*value).into()
+//     }
+// }
+
 impl From<std::io::Error> for MyError {
     fn from(value: std::io::Error) -> Self {
         Self::IO(value)
@@ -104,16 +116,19 @@ async fn proxy_get_stream(req: HttpRequest, config: &Config) -> Result<impl Stre
                 buf2 = [0u8; 4096];
             }
             let mut buf = input.next().await;
-            loop {
-                if let Some(buf) = buf {
-                    let mut buf = buf?;
-                    let result = decompressor.decompress(&buf, &mut buf2)?;
-                    yield Bytes::copy_from_slice(&buf2 as &[u8]);
-                    // buf = buf.slice(result.bytes_read ..);
-                    if result.info == DecoderInfo::Finished {
-                        break;
+            match buf {
+                Some(Err(err)) => Err(err)?,
+                Some(Ok(mut buf)) => {
+                    loop {
+                        let result = decompressor.decompress(&buf, &mut buf2)?;
+                        yield Bytes::copy_from_slice(&buf2 as &[u8]);
+                        // buf = buf.slice(result.bytes_read ..);
+                        if result.info == DecoderInfo::Finished {
+                            break;
+                        }
                     }
-                }
+                },
+                None => return, // FIXME
             }
         }
     })
