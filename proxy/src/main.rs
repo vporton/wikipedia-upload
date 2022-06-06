@@ -13,6 +13,7 @@ use brotli_decompressor::{BrotliDecompressStream, BrotliState};
 use brotli_decompressor::reader::HuffmanCode;
 use brotli_decompressor::reader::BrotliResult;
 extern crate alloc_stdlib;
+use reqwest::header::{HeaderName, InvalidHeaderName, InvalidHeaderValue};
 
 #[derive(Debug)]
 struct BrotliDecodeError;
@@ -33,6 +34,8 @@ impl Display for BrotliDecodeError {
 enum MyError {
     Reqwest(reqwest::Error),
     IO(std::io::Error),
+    InvalidHeaderName(InvalidHeaderName),
+    InvalidHeaderValue(InvalidHeaderValue),
     Actix(actix_web::Error),
     BrotliDecode(BrotliDecodeError),
 }
@@ -58,6 +61,8 @@ impl Display for MyError {
         match self {
             Self::Reqwest(err) => write!(f, "Upstream error: {err}"),
             Self::IO(err) => write!(f, "I/O error: {err}"),
+            Self::InvalidHeaderName(err) => write!(f, "Header name error: {err}"),
+            Self::InvalidHeaderValue(err) => write!(f, "Header value error: {err}"),
             Self::Actix(err) => write!(f, "Actix error: {err}"),
             Self::BrotliDecode(err) => write!(f, "Brotli error: {err}"),
         }
@@ -79,6 +84,18 @@ impl<T: Into<MyError> + Clone> From<&T> for MyError {
 impl From<std::io::Error> for MyError {
     fn from(value: std::io::Error) -> Self {
         Self::IO(value)
+    }
+}
+
+impl From<InvalidHeaderName> for MyError {
+    fn from(value: InvalidHeaderName) -> Self {
+        Self::InvalidHeaderName(value)
+    }
+}
+
+impl From<InvalidHeaderValue> for MyError {
+    fn from(value: InvalidHeaderValue) -> Self {
+        Self::InvalidHeaderValue(value)
     }
 }
 
@@ -108,22 +125,34 @@ struct Config {
 async fn proxy_get(req: HttpRequest, config: Data<Config>)
     -> Result<impl Responder, MyError>
 {
-    Ok(HttpResponse::Ok()
-        .content_type("application/xml")
-        .streaming(proxy_get_stream(req, &*config).await?))
+    let (stream, headers) = proxy_get_stream(req, &*config).await?;
+    let mut response = HttpResponse::Ok();
+    for (name, value) in headers {
+        if let Some(name) = name {
+            response.append_header((name, value));
+        }
+    }
+    Ok(response.streaming(stream))
 }
 
 // brotli_decompressor::declare_stack_allocator_struct!(MemPool, heap);
 
-async fn proxy_get_stream(req: HttpRequest, config: &Config) -> Result<impl Stream<Item = Result<Bytes, MyError>>, MyError> {
+async fn proxy_get_stream(req: HttpRequest, config: &Config)
+    -> Result<(impl Stream<Item = Result<Bytes, MyError>>, reqwest::header::HeaderMap), MyError>
+{
     let client = reqwest::Client::new();
+    let mut headers = reqwest::header::HeaderMap::new();
     let reqwest_response = client.get(config.upstream.clone() + req.path())
         .send()
         .await?;
+    for (name, value) in reqwest_response.headers().iter() {
+        let key = name.to_string().to_lowercase();
+        headers.insert(HeaderName::from_bytes(key.as_bytes())?, value.clone());
+    }
     let net_input = reqwest_response.bytes_stream();
     let mut net_input = net_input
         .map_err(|e| std::io::Error::new(ErrorKind::InvalidData, e));
-    Ok(try_stream! {
+    let stream = try_stream! {
         // TODO: Make them global variables?
         let mut u8_buffer = Box::new([0u8; 32 * 1024 * 1024]) as Box<[u8]>;
         let mut u32_buffer = Box::new([0u32; 1024 * 1024]) as Box<[u32]>;
@@ -176,7 +205,8 @@ async fn proxy_get_stream(req: HttpRequest, config: &Config) -> Result<impl Stre
                 _ => {}
             }
         }
-    })
+    };
+    Ok((stream, headers))
 }
 
 #[actix_web::main] // or #[tokio::main]
