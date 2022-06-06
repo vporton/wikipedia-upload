@@ -133,7 +133,8 @@ async fn proxy_get_stream(req: HttpRequest, config: &Config) -> Result<impl Stre
 
         let mut brotli_state = BrotliState::new(heap_u8_allocator, heap_u32_allocator, heap_hc_allocator);
 
-        let mut output_buf = [0u8; 4096];
+        let output_buf0 = [0u8; 4096];
+        let mut output_buf = output_buf0;
         let mut input_buf = Vec::new(); // should be `Bytes` instead?
         let mut available_in = 0;
         let mut available_out = output_buf.len();
@@ -156,8 +157,8 @@ async fn proxy_get_stream(req: HttpRequest, config: &Config) -> Result<impl Stre
                 output_offset = 0;
             }
             let mut written = 0;
-
             let old_output_offset = output_offset;
+            output_buf = output_buf0; // It is essentially a constant.
             let result = BrotliDecompressStream(
                 &mut available_in, &mut input_offset, &input_buf,
                 &mut available_out, &mut output_offset, &mut output_buf,
@@ -166,7 +167,9 @@ async fn proxy_get_stream(req: HttpRequest, config: &Config) -> Result<impl Stre
                 BrotliResult::ResultFailure => return Err::<(), MyError>(BrotliDecodeError::new().into())?,
                 _ => {},
             }
-            yield Bytes::copy_from_slice(&output_buf[old_output_offset .. output_offset]);
+            if old_output_offset != output_offset {
+                yield Bytes::copy_from_slice(&output_buf[old_output_offset .. output_offset]);
+            }
             match result {
                 BrotliResult::ResultSuccess => break,
                 _ => {}
