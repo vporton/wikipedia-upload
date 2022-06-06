@@ -90,7 +90,6 @@ async fn proxy_get(req: HttpRequest, config: Data<Config>)
 {
     Ok(HttpResponse::Ok()
         .content_type("application/xml")
-        // .streaming(Box::pin(proxy_get_stream(req, &*config).await?)))
         .streaming(proxy_get_stream(req, &*config).await?))
 }
 
@@ -120,7 +119,7 @@ impl Read for BytesStreamRead {
             }
         }
         let size = min(buf.len(), self.upstream_buf.len());
-        buf.clone_from_slice(&self.upstream_buf[.. size]);
+        buf[.. size].clone_from_slice(&self.upstream_buf[.. size]);
         self.upstream_buf = Vec::from(&self.upstream_buf[size ..]);
         return Ok(size);
     }
