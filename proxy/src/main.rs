@@ -135,7 +135,6 @@ async fn proxy_get_stream(req: HttpRequest, config: &Config) -> Result<impl Stre
     let input = input
         .map_err(|e| std::io::Error::new(ErrorKind::InvalidData, e));
     let mut decompressor = brotli::Decompressor::new(BytesStreamRead::new(Box::pin(input)), 4096);
-    // FIXME: tokio::spawn
     Ok(try_stream! {
         let mut buf = [0u8; 4096];
         loop {
