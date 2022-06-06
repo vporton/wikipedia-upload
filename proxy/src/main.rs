@@ -135,13 +135,18 @@ async fn proxy_get_stream(req: HttpRequest, config: &Config) -> Result<impl Stre
         .map_err(|e| std::io::Error::new(ErrorKind::InvalidData, e));
     let mut decompressor = brotli::Decompressor::new(BytesStreamRead::new(Box::pin(input)), 4096);
     Ok(try_stream! {
-        let mut buf = [0u8; 4096];
+        let buf0 = [0u8; 4096];
+        let mut buf = buf0;
         loop {
             if buf.len() == 0 {
-                buf = [0u8; 4096];
+                buf = buf0;
             }
-            decompressor.read(&mut buf)?;
-            yield Bytes::copy_from_slice(&buf as &[u8]);
+            let bytes = decompressor.read(&mut buf)?;
+            if bytes == 0 {
+                break;
+            }
+            println!("BUF={}", String::from_utf8_lossy(&buf[.. bytes]));
+            yield Bytes::copy_from_slice(&buf[.. bytes]);
         }
     })
 }
