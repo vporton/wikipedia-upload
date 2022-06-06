@@ -1098,6 +1098,7 @@ dependencies = [
  "futures",
  "futures-core",
  "reqwest",
+ "tokio",
 ]
 
 [[package]]

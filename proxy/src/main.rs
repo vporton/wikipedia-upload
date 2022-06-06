@@ -141,7 +141,9 @@ async fn proxy_get_stream(req: HttpRequest, config: &Config) -> Result<impl Stre
             if buf.len() == 0 {
                 buf = buf0;
             }
+            println!("YYY");
             let bytes = decompressor.read(&mut buf)?;
+            println!("XXX={bytes}");
             if bytes == 0 {
                 break;
             }
