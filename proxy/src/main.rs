@@ -119,8 +119,8 @@ async fn proxy_get_stream(req: HttpRequest, config: &Config) -> Result<impl Stre
     let reqwest_response = client.get(config.upstream.clone() + req.path())
         .send()
         .await?;
-    let input = reqwest_response.bytes_stream();
-    let input = input
+    let net_input = reqwest_response.bytes_stream();
+    let net_input = net_input
         .map_err(|e| std::io::Error::new(ErrorKind::InvalidData, e));
     Ok(try_stream! {
         let mut u8_buffer = Box::new([0u8; 32 * 1024 * 1024]) as Box<[u8]>;
@@ -156,7 +156,7 @@ async fn proxy_get_stream(req: HttpRequest, config: &Config) -> Result<impl Stre
                 available_out = input_buf.len();
                 output_offset = 0;
             }
-            let mut written;
+            let mut written = 0;
             let result = BrotliDecompressStream(
                 &mut available_in, &mut input_offset, &input_buf,
                 &mut available_out, &mut output_offset, &mut output_buf,
