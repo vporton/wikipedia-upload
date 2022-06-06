@@ -13,6 +13,7 @@ use futures::stream::StreamExt;
 use alloc_stdlib::heap_alloc::HeapPrealloc; // TODO: Should use stdlib.
 use brotli_decompressor::{BrotliDecompressStream, BrotliState};
 use brotli_decompressor::reader::HuffmanCode;
+use brotli_decompressor::reader::BrotliResult;
 #[macro_use]
 extern crate alloc_stdlib;
 
@@ -120,7 +121,7 @@ async fn proxy_get_stream(req: HttpRequest, config: &Config) -> Result<impl Stre
         .send()
         .await?;
     let net_input = reqwest_response.bytes_stream();
-    let net_input = net_input
+    let mut net_input = net_input
         .map_err(|e| std::io::Error::new(ErrorKind::InvalidData, e));
     Ok(try_stream! {
         let mut u8_buffer = Box::new([0u8; 32 * 1024 * 1024]) as Box<[u8]>;
@@ -130,41 +131,46 @@ async fn proxy_get_stream(req: HttpRequest, config: &Config) -> Result<impl Stre
         let heap_u32_allocator = HeapPrealloc::<u32>::new_allocator(4096, &mut u32_buffer, |_| {});
         let heap_hc_allocator = HeapPrealloc::<HuffmanCode>::new_allocator(4096, &mut hc_buffer, |_| {});
 
-        let input_buf0 = [0u8; 4096];
-        let mut input_buf = input_buf0;
-        let output_buf0 = [0u8; 4096];
-        let mut output_buf = output_buf0;
-        let mut available_in = input_buf0.len();
-        let mut available_out = output_buf0.len();
+        // let input_buf0 = [0u8; 4096];
+        // let mut input_buf = input_buf0;
+        let mut output_buf = [0u8; 4096];
+        let mut input_buf = Vec::new(); // should be `Bytes` instead?
+        let mut available_in = 0;
+        let mut available_out = output_buf.len();
         let mut input_offset = 0;
         let mut output_offset = 0;
 
         let mut brotli_state = BrotliState::new(heap_u8_allocator, heap_u32_allocator, heap_hc_allocator);
 
         loop {
-            if input_buf.len() == 0 {
-                input_buf = input_buf0;
-            }
-            if output_buf.len() == 0 {
-                output_buf = output_buf0;
-            }
-            if available_in == 0 {
-                available_in = input_buf.len();
-                input_offset = 0;
-            }
             if available_out == 0 {
-                available_out = input_buf.len();
+                available_out = output_buf.len();
                 output_offset = 0;
             }
+            if available_in == 0 {
+                let piece = net_input.next().await;
+                available_in = if let Some(piece) = piece {
+                    input_buf = piece?.as_ref().to_vec(); // probably not efficient
+                    input_buf.len()
+                } else {
+                    0
+                };
+                input_offset = 0;
+            }
             let mut written = 0;
+
+            let old_output_offset = output_offset;
             let result = BrotliDecompressStream(
                 &mut available_in, &mut input_offset, &input_buf,
                 &mut available_out, &mut output_offset, &mut output_buf,
                 &mut written, &mut brotli_state);
-            if written == 0 {
-                break;
+            match result {
+                BrotliResult::ResultSuccess | BrotliResult::ResultFailure => { // FIXME: Return error.
+                    break;
+                }
+                _ => {}
             }
-            yield Bytes::copy_from_slice(&output_buf[.. written]);
+            yield Bytes::copy_from_slice(&output_buf[old_output_offset .. output_offset]);
         }
     })
 }
