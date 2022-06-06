@@ -129,7 +129,9 @@ async fn proxy_get(req: HttpRequest, config: Data<Config>)
     let mut response = HttpResponse::Ok();
     for (name, value) in headers {
         if let Some(name) = name {
-            response.append_header((name, value));
+            if !["accept-ranges", "content-length", "decompressed-content-length"].contains(&name.as_str()) {
+                response.append_header((name, value));
+            }
         }
     }
     Ok(response.streaming(stream))
