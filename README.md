@@ -125,7 +125,7 @@ run it as
 ```
 to appear on port 8080.
 
-If you need SSL, do like this:
+If you need SSL, chain Bee and two proxies like this:
 ```
 Apache/Nginx <-- ./proxy.sh <-- Bee
 ```
