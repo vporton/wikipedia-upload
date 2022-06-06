@@ -115,6 +115,17 @@ It has two buttons "Open article" and "Search". Search performs set intersection
 indexes for typed words (searching subwords is not supported). Each index contains all
 pages with this exact word but no more pages that the value specified by `-m`, `--max-search-results`.
 
+You can also use a tightly specialized script `cron.py` to upload Wikipedia
+from [https://dumps.wikimedia.org/other/kiwix/zim/wikipedia/](https://dumps.wikimedia.org/other/kiwix/zim/wikipedia/):
+
+```
+Usage ./cron.py <SOURCE-DIR> <STATE-DIR> <SUBSTR>
+```
+
+Here `<SOURCE-DIR>` is this directory, `<STATE-DIR>` directory stores the state and log, `<SUBSTR>` is like
+`en_all_maxi` (specifies which Wikipedia is uploaded).
+
+
 ### View files
 
 If files are not Brotli-compressed, just open the BZZ URL.
@@ -139,6 +150,7 @@ It is a system of Python and sh scripts and two Docker containers:
 
 - `indexer` that creates a word index
 - `brotler` that compress every file except of symlinks in a directory recursively
+- `copy_mtime` copies ZIM mtime into each extracted (and prepared) file, to make it deterministic.
 
 `zim-tools` contains the third-party package [ZIM tools](https://github.com/openzim/zim-tools).
 
