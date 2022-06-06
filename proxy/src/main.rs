@@ -163,12 +163,12 @@ async fn proxy_get_stream(req: HttpRequest, config: &Config) -> Result<impl Stre
                 &mut available_out, &mut output_offset, &mut output_buf,
                 &mut written, &mut brotli_state);
             match result {
-                BrotliResult::ResultSuccess => yield Bytes::copy_from_slice(&output_buf[old_output_offset .. output_offset]),
+                BrotliResult::ResultFailure => return Err::<(), MyError>(BrotliDecodeError::new().into())?,
                 _ => {},
             }
+            yield Bytes::copy_from_slice(&output_buf[old_output_offset .. output_offset]);
             match result {
                 BrotliResult::ResultSuccess => break,
-                BrotliResult::ResultFailure => return Err::<(), MyError>(BrotliDecodeError::new().into())?,
                 _ => {}
             }
         }
