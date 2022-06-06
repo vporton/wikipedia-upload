@@ -111,8 +111,6 @@ It has two buttons "Open article" and "Search". Search performs set intersection
 indexes for typed words (searching subwords is not supported). Each index contains all
 pages with this exact word but no more pages that the value specified by `-m`, `--max-search-results`.
 
-TODO: Add `Content-Encoding: br` by a Nginx container.
-
 ### View files
 
 If files are not Brotli-compressed, just open the BZZ URL.
@@ -123,6 +121,11 @@ run it as
 ./proxy.sh
 ```
 to appear on port 8080.
+
+If you need SSL, do like this:
+```
+Apache/Nginx <-- ./proxy.sh <-- Bee
+```
 
 ## Technicals
 
