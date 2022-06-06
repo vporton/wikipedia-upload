@@ -125,7 +125,6 @@ Usage ./cron.py <SOURCE-DIR> <STATE-DIR> <SUBSTR>
 Here `<SOURCE-DIR>` is this directory, `<STATE-DIR>` directory stores the state and log, `<SUBSTR>` is like
 `en_all_maxi` (specifies which Wikipedia is uploaded).
 
-
 ### View files
 
 If files are not Brotli-compressed, just open the BZZ URL.
