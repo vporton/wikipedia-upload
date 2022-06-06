@@ -118,7 +118,7 @@ If files are not Brotli-compressed, just open the BZZ URL.
 If the files are Brotli-compressed, you can view them only through a special proxy:
 run it as
 ```
-./proxy.sh
+./proxy.sh  # FIXME: Thoroughly test the proxy.
 ```
 to appear on port 8080.
 
