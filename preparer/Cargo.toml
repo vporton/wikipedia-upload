@@ -13,6 +13,9 @@ name = "brotler"
 [[bin]]
 name = "indexer"
 
+[[bin]]
+name = "copy_mtime"
+
 [dependencies]
 walkdir = "2.3.2"
 brotlic = "0.7.0"
