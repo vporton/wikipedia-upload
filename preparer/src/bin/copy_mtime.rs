@@ -1,10 +1,11 @@
-use std::{env, fs, process};
+use std::{fs, process};
 use std::fmt::{Display, Formatter};
 use std::path::Path;
 use filetime::set_file_mtime;
 use log::{debug, error};
 use walkdir::WalkDir;
 use clap::Parser;
+use filetime::FileTime;
 
 #[derive(Debug)]
 enum MyError {
@@ -53,15 +54,15 @@ fn main() {
 fn almost_main() -> Result<(), MyError> {
     let args = Args::parse();
 
-    let mtime = fs::metadata(args.source_file)?.modified()?;
+    let mtime = fs::metadata(args.source_file.clone())?;
 
-    for entry in WalkDir::new(Path::new(&env::args().nth(1).unwrap()))
+    for entry in WalkDir::new(Path::new(&args.destination_directory))
         .sort_by_file_name() // keep the order deterministic, because we overwrite files
         .into_iter()
     {
         let entry = entry?;
         debug!("Setting file {} mtime", entry.path().to_str().unwrap());
-        set_file_mtime(entry.path(), mtime.into())?;
+        set_file_mtime(entry.path(), FileTime::from_last_modification_time(&mtime))?;
     }
 
     Ok(())
