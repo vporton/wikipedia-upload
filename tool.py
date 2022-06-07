@@ -13,7 +13,7 @@ import argparse
 
 parser = argparse.ArgumentParser(description="Extract ZIM archive and/or upload files to Swarm")
 parser.add_argument("-l", "--log-level", dest="log_level", help="log level (DEBUG, INFO, WARNING, ERROR, CRITICAL or a number)")
-parser.add_argument("-F", "--add-files", dest="add_files", help="files to add", default="static")
+parser.add_argument("-F", "--add-files", dest="add_files", help="files to add")
 parser.add_argument("-H", "--enhance-files", dest="enhance_files", help="add a comment to bottom", action=argparse.BooleanOptionalAction)
 parser.add_argument("-M", "--enhance-files-more", dest="enhance_files_more", help="add the specified text in bottom comment", metavar="TEXT", nargs='?')
 parser.add_argument("-S", "--search", dest="search_index", help="create search index in search/", action=argparse.BooleanOptionalAction)
