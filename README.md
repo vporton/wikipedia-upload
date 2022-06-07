@@ -9,6 +9,7 @@ Prerequistes:
 * tar
 * Python 3
 * Sed
+* Wget
 * a working installation of Bee
 
 Do the following (in any order):

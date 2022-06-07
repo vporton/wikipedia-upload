@@ -5,6 +5,7 @@ import logging
 from shutil import copyfile
 from os.path import abspath
 import sys, os, subprocess, requests
+from click import argument
 from tkinter import N
 from time import sleep
 from tempfile import TemporaryDirectory
@@ -148,7 +149,7 @@ def upload(directory):
             headers["Swarm-Error-Document"] = args.error_document
         try:
             res = requests.post("http://localhost:1633/bzz", data=tar.stdout, headers=headers)
-        except requests.exceptions.ConnectionError as e:  # tar disconnected
+        except requests.exceptions.ConnectionError as e:  # tar disconnected  # TODO: Differentiate different errors.
             logger.info('tar disconnected - repeating')
         else:
             if 200 <= res.status_code < 300:
@@ -173,8 +174,8 @@ def upload(directory):
     log_line = f"{file_identificator} reference={uploaded_reference} batchID={batch_id} tag={tag}\n"
     sys.stdout.write(log_line)
     if args.uploads_log:
-        with open(args.uploads_log, 'a') as uploads_log:
-            uploads_log.write(log_line)
+        with open(args.uploads_log, 'a') as f:
+            f.write(log_line)
 
 if args.command == 'extract':
     extract_zim(args.output_dir)
