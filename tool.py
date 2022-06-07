@@ -82,7 +82,7 @@ def extract_zim(output_dir):
 
         run_command(f"for i in {output_dir}/_exceptions/*; do mv \"$i\" {output_dir}/A/`echo \"$i\" | sed 's@^.*A%2f\\([^/]*\\)$@\\1@; s@%2f@\\$@g'`; done")
 
-        if args.add_files is not None:
+        if args.add_files:
             logger.info("Adding additional files...")
             run_command(f"cp -r {args.add_files}/* {output_dir}")
         
