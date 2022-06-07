@@ -1,6 +1,9 @@
 # Wikipedia & ZIM uploader
 
-FIXME: It is nondeterministic because of files modification times.
+TODO:
+- feed
+- upload English Wikipedia
+- video
 
 ## Installation
 
