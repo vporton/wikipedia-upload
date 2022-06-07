@@ -155,7 +155,8 @@ It is a system of Python and sh scripts and two Docker containers:
 
 - `indexer` that creates a word index
 - `brotler` that compress every file except of symlinks in a directory recursively
-- `copy_mtime` copies ZIM mtime into each extracted (and prepared) file, to make it deterministic.
+- `copy_mtime` copies ZIM mtime into each extracted (and prepared) file, to make it deterministic
+  (in some reasons, the top hash is nevertheless no deterministic).
 
 `zim-tools` contains the third-party package [ZIM tools](https://github.com/openzim/zim-tools).
 
