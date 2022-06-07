@@ -149,7 +149,7 @@ def upload(directory):
             headers["Swarm-Error-Document"] = args.error_document
         try:
             res = requests.post("http://localhost:1633/bzz", data=tar.stdout, headers=headers)
-        except requests.exceptions.ConnectionError as e:  # tar disconnected  # TODO: Differentiate different errors.
+        except requests.exceptions.ConnectionError:  # tar disconnected  # TODO: Differentiate different errors.
             logger.info('tar disconnected - repeating')
         else:
             if 200 <= res.status_code < 300:
