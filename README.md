@@ -93,6 +93,8 @@ options:
                         index document name
   -E ERROR_DOCUMENT, --error-doc ERROR_DOCUMENT
                         error document name
+  -D FEED_TOPIC, --feed-topic FEED_TOPIC
+                        Swarm feed topic (update it if specified)
 ```
 
 In `extract` mode it does not upload to Swarm, but just creates a directory for testing.
@@ -123,11 +125,12 @@ You can also use a tightly specialized script `cron.py` to upload Wikipedia
 from [https://dumps.wikimedia.org/other/kiwix/zim/wikipedia/](https://dumps.wikimedia.org/other/kiwix/zim/wikipedia/):
 
 ```
-Usage ./cron.py <SOURCE-DIR> <STATE-DIR> <SUBSTR>
+Usage ./cron.py <SOURCE-DIR> <STATE-DIR> <SUBSTR> [<FEED-TOPIC>]
 ```
 
 Here `<SOURCE-DIR>` is this directory, `<STATE-DIR>` directory stores the state and log, `<SUBSTR>` is like
-`en_all_maxi` (specifies which Wikipedia is uploaded).
+`en_all_maxi` (specifies which Wikipedia is uploaded), if `<FEED-TOPIC>` is present also upload to this Swarm
+feed topic.
 
 ### View files
 
@@ -152,7 +155,7 @@ Apache/Nginx <-- ./proxy.sh <-- Bee
 
 ## Technicals
 
-It is a system of Python and sh scripts and two Docker containers:
+It is a system of Python and sh scripts and Docker containers:
 
 `preparer` contains two commands developed by me:
 
@@ -162,6 +165,9 @@ It is a system of Python and sh scripts and two Docker containers:
   (in some reasons, the top hash is nevertheless no deterministic).
 
 `zim-tools` contains the third-party package [ZIM tools](https://github.com/openzim/zim-tools).
+
+`sign-feed` Docker container outputs information to a Swarm feed. It signs it by private key `feedSignKey.private` stored
+in `0x...` format in `/private` Docker volume. (The key is created on first run.)
 
 The actions sequence (some elements are excluded dependently on command line options):
 
@@ -178,6 +184,18 @@ The actions sequence (some elements are excluded dependently on command line opt
 - the previous operation repeates until success (because batch ID is available only after a delay)
 - add uploaded reference to `uploads.log` file
 - wait till synced == total
+- write to the Swarm Feed
+
+## Format of the Swarm Feed
+
+```json
+{
+    "file": file_identificator,
+    "reference": uploaded_reference,
+    "batchID": batch_id,
+    "tag": tag
+}
+```
 
 ## Bugs
 

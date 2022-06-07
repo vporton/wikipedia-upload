@@ -1,7 +1,9 @@
 #!/bin/env python3
 
 from cProfile import run
+import json
 import logging
+from shlex import quote
 from shutil import copyfile
 from os.path import abspath
 import sys, os, subprocess, requests
@@ -36,6 +38,7 @@ parser_upload.add_argument("-L", "--uploads-log-file", dest="uploads_log",
                            help="uploads log file (default uploads.log, specify empty string for no uploads log)", default="uploads.log")
 parser_upload.add_argument("-I", "--index-doc", dest="index_document", help="index document name")
 parser_upload.add_argument("-E", "--error-doc", dest="error_document", help="error document name")
+parser_upload.add_argument("-D", "--feed-topic", dest="feed_topic", help="Swarm feed topic (update it if specified)")
 
 args = parser.parse_args()
 
@@ -171,7 +174,17 @@ def upload(directory):
 
     file_identificator = (args.zim_file if args.zim_file else args.zim_url) \
         if args.zim_file or args.zim_url else args.input_dir
-    log_line = f"{file_identificator} reference={uploaded_reference} batchID={batch_id} tag={tag}\n"
+    if args.feed_topic:
+        log_json = {
+            'file': file_identificator,
+            'reference': uploaded_reference,
+            'batchID': batch_id,
+            'tag': tag
+        }
+        log_json_serialized = quote(json.dumps(log_json))
+        run_command(f"docker run --rm -e RUST_LOG={args.log_level} -u{os.getuid()} sign-feed " \
+            f"yarn /root/signFeed/signfeed-cli.js {quote(args.feed_topic)} {log_json_serialized}")
+    log_line = f"{file_identificator} reference={uploaded_reference} batchID={batch_id} tag={tag} feed_topic={quote(args.feed_topic)}\n"
     sys.stdout.write(log_line)
     if args.uploads_log:
         with open(args.uploads_log, 'a') as f:

@@ -1,0 +1,8 @@
+FROM node:18.3.0-alpine3.14
+
+COPY signFeed /root/signFeed
+WORKDIR /root/signFeed
+RUN yarn
+
+VOLUME /private
+# EXPOSE 1633
