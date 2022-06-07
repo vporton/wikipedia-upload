@@ -80,7 +80,7 @@ def extract_zim(output_dir):
         # TODO: Fix https://github.com/openzim/zim-tools/issues/303 and make Bee understand redirects, then add `--redirect` here:
         run_command(f"rm -rf {output_dir}/X")  # Remove useless search indexes.
 
-        run_command(f"for i in {output_dir}/_exceptions/*; do cp \"$i\" {output_dir}/A/`echo \"$i\" | sed 's@^.*A%2f\\([^/]*\\)$@\\1@'`; done")
+        run_command(f"for i in {output_dir}/_exceptions/*; do mv \"$i\" {output_dir}/A/`echo \"$i\" | sed 's@^.*A%2f\\([^/]*\\)$@\\1@; s@%2f@\\$@g'`; done")
 
         if args.add_files is not None:
             logger.info("Adding additional files...")

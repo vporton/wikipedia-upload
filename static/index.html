@@ -11,7 +11,7 @@
       function openArticle(event) {
         document.getElementById('frame').style.display = 'block';
         document.getElementById('searchResults').style.display = 'none';
-        let phrase = document.getElementById('entry').value.replace(/ +/g, '_');
+        let phrase = document.getElementById('entry').value.replace(/ +/g, '_').replace(/\//g, '$');
         if(phrase.length != 0) {
           phrase = phrase[0].toUpperCase() + phrase.substring(1)
           const url = 'A/' + encodeURIComponent(phrase);
@@ -30,7 +30,7 @@
 
         let tasks = words.map(w => {
           return (async() => {
-            const res = await fetch('search/' + encodeURIComponent(w));
+            const res = await fetch('search/' + encodeURIComponent(w.replace(/\//g, '$')));
             const text = await res.text();
             pages = text.split('\0');
             --pages.length; // remove empty string at end
