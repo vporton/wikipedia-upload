@@ -25,6 +25,7 @@ try:
         old_url = f.read()
         if old_url == url:
             print(f"{url} already uploaded, exiting")
+            sys.exit(0)
 except FileNotFoundError:
     pass
 
