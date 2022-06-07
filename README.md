@@ -110,8 +110,6 @@ of the ZIM file. If can add additional information to this comment by `--enhance
 
 `-m`, `--max-search-results` See _Usage_.
 
-TODO: modify mtimes to be the same as of .zim file.
-
 ## Usage
 
 Open the uploaded hash (also stored in `uploads.log` in the current directory or
