@@ -97,6 +97,9 @@ options:
                         Swarm feed topic (update it if specified)
 ```
 
+In `extract` mode it uploads to Swarm. Note that it sets enough credit for the upload
+to be available for 10 months (if I set 1 month, it can't upload).
+
 In `extract` mode it does not upload to Swarm, but just creates a directory for testing.
 
 Some "difficult to understand" options:

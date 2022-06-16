@@ -1,8 +1,11 @@
 FROM node:18.3.0-alpine3.14
 
-COPY signFeed /root/signFeed
+COPY signFeed/package.json signFeed/yarn.lock signFeed/signfeed-cli.js /root/signFeed/
 WORKDIR /root/signFeed
 RUN yarn
 
+RUN chmod a+x /root
+
+RUN mkdir /private
 VOLUME /private
 # EXPOSE 1633

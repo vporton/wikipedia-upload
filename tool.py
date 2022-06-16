@@ -182,9 +182,20 @@ def upload(directory):
             'tag': tag
         }
         log_json_serialized = quote(json.dumps(log_json))
-        run_command(f"docker run --rm -e RUST_LOG={args.log_level} -u{os.getuid()} sign-feed " \
-            f"yarn /root/signFeed/signfeed-cli.js {quote(args.feed_topic)} {log_json_serialized}")
-    log_line = f"{file_identificator} reference={uploaded_reference} batchID={batch_id} tag={tag} feed_topic={quote(args.feed_topic)}\n"
+
+        url = f"http://localhost:1635/stamps/1/17"
+        print(f"stamp for the feed: {url}")
+        res = requests.post(url)
+        try:
+            batch_id2 = res.json()["batchID"]
+        except KeyError:
+            print(res.json()["message"])
+            sys.exit(1)
+
+        print("Signing the feed:")
+        run_command(f"docker run --rm --network=host -u{os.getuid()} sign-feed " \
+            f"node /root/signFeed/signfeed-cli.js {quote(args.feed_topic)} {quote(log_json_serialized)}")
+    log_line = f"{file_identificator} reference={uploaded_reference} batchID={batch_id2} tag={tag} feed_topic={quote(args.feed_topic)}\n"
     sys.stdout.write(log_line)
     if args.uploads_log:
         with open(args.uploads_log, 'a') as f:
