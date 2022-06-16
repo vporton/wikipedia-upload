@@ -7,7 +7,6 @@ from shlex import quote
 from shutil import copyfile
 from os.path import abspath
 import sys, os, subprocess, requests
-from click import argument
 from time import sleep
 from tempfile import TemporaryDirectory
 import argparse
