@@ -115,6 +115,9 @@ of the ZIM file. If can add additional information to this comment by `--enhance
 
 ## Usage
 
+Ensure that you have a big disk on Bee installation to contain all the chunks (compressed files)
+uploaded (possibly simultaneously).
+
 Open the uploaded hash (also stored in `uploads.log` in the current directory or
 location specified by `-L` option) to view.
 
