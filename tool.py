@@ -3,6 +3,7 @@
 from cProfile import run
 import json
 import logging
+import re
 from shlex import quote
 from shutil import copyfile
 from os.path import abspath
@@ -81,7 +82,25 @@ def extract_zim(output_dir):
         # TODO: Fix https://github.com/openzim/zim-tools/issues/303 and make Bee understand redirects, then add `--redirect` here:
         run_command(f"rm -rf {output_dir}/X")  # Remove useless search indexes.
 
-        run_command(f"for i in {output_dir}/_exceptions/*; do mv \"$i\" {output_dir}/A/`echo \"$i\" | sed 's@^.*A%2f\\([^/]*\\)$@\\1@; s@%2f@\\$@g'`; done")
+        logger.info("Correcting files with /...")
+        needle = r'<meta http-equiv="refresh" content="0;url=../../'
+        repl   = r'<meta http-equiv="refresh" content="0;url='
+        root = f"{output_dir}/_exceptions"
+        RE = re.compile(r".*?A%2f([^/]*)$")
+        for (_dirpath, _dirnames, filenames) in os.walk(root):
+            for name in filenames:
+                source = os.path.join(root, name)
+                dest = f"{output_dir}/A/" + re.sub(RE, r'\1', source).replace('/', '%2f')  # Be careful, it is used in rm -rf
+                logger.info(f"{source} -> {dest}")
+                with open(source) as source_file:
+                    text = source_file.read().replace(needle, repl)
+                    try:
+                        os.system(f"rm -rf {dest}")
+                    except NameError:
+                        pass
+                    with open(dest, 'w') as dest_file:
+                        dest_file.write(text)
+                os.unlink(source)
 
         if args.add_files:
             logger.info("Adding additional files...")

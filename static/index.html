@@ -11,7 +11,7 @@
       function openArticle(event) {
         document.getElementById('frame').style.display = 'block';
         document.getElementById('searchResults').style.display = 'none';
-        let phrase = document.getElementById('entry').value.replace(/ +/g, '_').replace(/\//g, '$');
+        let phrase = document.getElementById('entry').value.replace(/ +/g, '_').replace(/\//g, '%2f');
         if(phrase.length != 0) {
           phrase = phrase[0].toUpperCase() + phrase.substring(1)
           const url = 'A/' + encodeURIComponent(phrase);
