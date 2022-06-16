@@ -4,14 +4,13 @@ const crypto = require('crypto');
 const fs = require('fs');
 var axios = require('axios').default;
 
-if(process.argv.length != 2) {
-    console.log("Usage: signfeed-cli.js <feedTopic> <feedValue>\n\n" +
+if(process.argv.length != 4) {
+    console.log("Usage: node signfeed-cli.js <feedTopic> <feedValue>\n\n" +
       "<feedValue> is a JSON object")
 }
-return
 
-const feedTopic = process.argv[1];
-const feedValue = process.argv[2];
+const feedTopic = process.argv[2];
+const feedValue = process.argv[3];
 
 let privateKey;
 const keyFilename = '/private/feedSignKey.private';
