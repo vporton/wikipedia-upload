@@ -223,3 +223,7 @@ need to reupload is seldom.)
 Check code: https://github.com/ethersphere/swarm-cli/blob/ec496a220bffd024f9e3896abd96a834032b7200/src/command/upload.ts#L272
 
 Debug port must be open unless you specify existing `--batch-id`.
+
+## Uploads
+
+I also uploaded to the feed `English Wikipedia upload`.
