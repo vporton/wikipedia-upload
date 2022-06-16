@@ -1,4 +1,4 @@
-FROM node:18.3.0-alpine3.14
+FROM node:18.3.0
 
 # Necessary for ARM platform
 RUN apt-get -y update
