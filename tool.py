@@ -8,7 +8,6 @@ from shutil import copyfile
 from os.path import abspath
 import sys, os, subprocess, requests
 from click import argument
-from tkinter import N
 from time import sleep
 from tempfile import TemporaryDirectory
 import argparse
