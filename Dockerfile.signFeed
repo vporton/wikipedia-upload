@@ -1,8 +1,8 @@
-FROM node:18.3.0-alpine3.14
+FROM ubuntu:22.10
 
-# Necessary for ARM platform
+# Python is necessary for ARM platform
 RUN apt -y update
-RUN apt -y install python3
+RUN apt -y install nodejs yarnpkg python3
 
 COPY signFeed/package.json signFeed/yarn.lock signFeed/signfeed-cli.js /root/signFeed/
 WORKDIR /root/signFeed
