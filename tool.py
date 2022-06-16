@@ -194,7 +194,7 @@ def upload(directory):
 
         print("Signing the feed:")
         run_command(f"docker run --rm --network=host -u{os.getuid()} sign-feed " \
-            f"node /root/signFeed/signfeed-cli.js {quote(args.feed_topic)} {quote(log_json_serialized)}")
+            f"sh -c node /root/signFeed/signfeed-cli.js {quote(args.feed_topic)} {quote(log_json_serialized)}")
     log_line = f"{file_identificator} reference={uploaded_reference} batchID={batch_id2} tag={tag} feed_topic={quote(args.feed_topic)}\n"
     sys.stdout.write(log_line)
     if args.uploads_log:
