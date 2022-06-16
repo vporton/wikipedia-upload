@@ -6,7 +6,7 @@ RUN apt -y install nodejs yarnpkg python3
 
 COPY signFeed/package.json signFeed/yarn.lock signFeed/signfeed-cli.js /root/signFeed/
 WORKDIR /root/signFeed
-RUN yarn
+RUN yarnpkg
 
 RUN chmod a+x /root
 
