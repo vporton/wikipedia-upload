@@ -227,3 +227,5 @@ Debug port must be open unless you specify existing `--batch-id`.
 ## Uploads
 
 I also uploaded to the feed `English Wikipedia upload`.
+
+Fo9r uploading Wikipedia use XFS not Ext4 (for faster deletion of big folders).

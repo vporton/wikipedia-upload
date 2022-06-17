@@ -66,7 +66,7 @@ def extract_zim(output_dir):
     with TemporaryDirectory() as input_dir:
         if args.zim_url:
             # TODO: Don't place input.zim in current directory.
-            run_command(f"wget -O {input_dir}/input.zim \"{args.zim_url}\"")
+            run_command(f"wget --tries=100 -O {input_dir}/input.zim \"{args.zim_url}\"")
         else:
             copyfile(args.zim_file, f"{input_dir}/input.zim")
 
