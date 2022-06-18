@@ -83,7 +83,7 @@ def extract_zim(output_dir):
         run_command(f"rm -rf {output_dir}/X")  # Remove useless search indexes.
 
         logger.info("Correcting files with /...")
-            needle = r'<meta http-equiv="refresh" content="0;url=../'
+        needle = r'<meta http-equiv="refresh" content="0;url=../'
         repl   = r'<meta http-equiv="refresh" content="0;url='
         root = f"{output_dir}/_exceptions"
         RE = re.compile(r".*?A%2f([^/]*)$")
