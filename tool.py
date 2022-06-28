@@ -66,7 +66,7 @@ def extract_zim(output_dir):
     with TemporaryDirectory() as input_dir:
         if args.zim_url:
             # TODO: Don't place input.zim in current directory.
-            run_command(f"wget --tries=100 -O {input_dir}/input.zim \"{args.zim_url}\"")
+            run_command(f"wget --tries=100 -O {input_dir}/input.zim {quote(args.zim_url)}")
         else:
             copyfile(args.zim_file, f"{input_dir}/input.zim")
 
@@ -86,7 +86,7 @@ def extract_zim(output_dir):
         needle = r'<meta http-equiv="refresh" content="0;url=../'
         repl   = r'<meta http-equiv="refresh" content="0;url='
         root = f"{output_dir}/_exceptions"
-        RE = re.compile(r".*?A%2f([^/]*)$")
+        RE = re.compile(r".*?A%2f([^/]+)$")
         for (_dirpath, _dirnames, filenames) in os.walk(root):
             for name in filenames:
                 source = os.path.join(root, name)
@@ -95,7 +95,7 @@ def extract_zim(output_dir):
                 with open(source) as source_file:
                     text = source_file.read().replace(needle, repl)
                     try:
-                        os.system(f"rm -rf {dest}")
+                        os.system(f"rm -rf {quote(dest)}")
                     except NameError:
                         pass
                     with open(dest, 'w') as dest_file:
@@ -104,7 +104,7 @@ def extract_zim(output_dir):
 
         if args.add_files:
             logger.info("Adding additional files...")
-            run_command(f"cp -r {args.add_files}/* {output_dir}")
+            run_command(f"cp -r {quote(args.add_files)}/* {output_dir}")
         
         if args.search_index:
             logger.info("Creating search index...")
@@ -114,7 +114,7 @@ def extract_zim(output_dir):
         if args.enhance_files:
             source = args.zim_url if args.zim_url else args.zim_file
             run_command(f"sum=`sha256sum {input_dir}/input.zim | awk '{{print $1}}'`; find {output_dir}/A -type f | "\
-                f"while read f; do {{ echo; echo \"<!--\"; echo {source} SHA256=$sum; echo {args.enhance_files_more}; echo \"-->\"; }} >> \"$f\"; done")
+                f"while read f; do {{ echo; echo \"<!--\"; echo {quote(source)} SHA256=$sum; echo {args.enhance_files_more}; echo \"-->\"; }} >> \"$f\"; done")
 
         if args.brotli:
             logger.info("Compressing files (inplace)...")
@@ -209,9 +209,12 @@ def upload(directory):
             print(res.json()["message"])
             sys.exit(1)
 
-        print("Signing the feed:")
-        run_command(f"docker run --rm --network=host -u{os.getuid()} sign-feed " \
-            f"sh -c node /root/signFeed/signfeed-cli.js {quote(args.feed_topic)} {quote(log_json_serialized)}")
+        try:
+            print("Signing the feed:")
+            run_command(f"docker run --rm --network=host -u{os.getuid()} sign-feed " \
+                f"sh -c node /root/signFeed/signfeed-cli.js {quote(args.feed_topic)} {quote(log_json_serialized)}")
+        except Exception as e:
+            print(e)
     log_line = f"{file_identificator} reference={uploaded_reference} batchID={batch_id2} tag={tag} feed_topic={quote(args.feed_topic)}\n"
     sys.stdout.write(log_line)
     if args.uploads_log:
