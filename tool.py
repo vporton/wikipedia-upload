@@ -43,11 +43,11 @@ args = parser.parse_args()
 
 if args.command == 'extract' and args.input_dir is not None:
     sys.stderr.write("Incompatible options: cannot extract from directory.")
-    os.exit(1)
+    sys.exit(1)
 
 if args.enhance_files is not None and args.input_dir is not None:
     sys.stderr.write("Incompatible options: enhance a directory.")
-    os.exit(1)
+    sys.exit(1)
 
 logging.basicConfig(level=args.log_level or logging.INFO)
 logger = logging.getLogger("tool.py")
