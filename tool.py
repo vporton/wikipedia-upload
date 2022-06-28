@@ -94,6 +94,8 @@ def extract_zim(output_dir):
                 if source == dest:
                     continue
                 dest = f"{output_dir}/A/" + dest  # Be careful, it is used in rm -rf
+                if source == dest:  # need second check?
+                    continue
                 logger.info(f"{source} -> {dest}")
                 with open(source) as source_file:
                     text = source_file.read().replace(needle, repl)
