@@ -1,7 +1,6 @@
 FROM ubuntu:22.10
 
-RUN apt -y update
-RUN apt -y install wget git make golang-1.17-go
+RUN apt -y update && apt -y install wget git make golang-1.17-go
 
 RUN update-alternatives --install /usr/bin/go go /usr/lib/go-1.17/bin/go 50
 

@@ -1,7 +1,6 @@
 FROM ubuntu:22.10
 
-RUN apt -y update
-RUN apt -y install wget pkgconf meson ninja-build libzim-dev cmake \
+RUN apt -y update && apt -y install wget pkgconf meson ninja-build libzim-dev cmake \
     libdocopt-dev libkainjow-mustache-dev libmagic-dev zlib1g-dev libgumbo-dev libicu-dev
 
 WORKDIR /root

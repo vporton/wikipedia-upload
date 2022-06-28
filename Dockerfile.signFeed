@@ -1,8 +1,7 @@
 FROM node:18.3.0
 
 # Necessary for ARM platform
-RUN apt-get -y update
-RUN apt-get -y install python3
+RUN apt-get -y update && apt-get -y install python3
 
 COPY signFeed/package.json signFeed/yarn.lock signFeed/signfeed-cli.js /root/signFeed/
 WORKDIR /root/signFeed
