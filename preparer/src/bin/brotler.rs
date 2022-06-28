@@ -57,7 +57,7 @@ fn almost_main() -> Result<(), MyError> {
         process::exit(1);
     }
     for entry in WalkDir::new(Path::new(&env::args().nth(1).unwrap()))
-        .sort_by_file_name() // keep the order deterministic, because we overwrite files
+        // .sort_by_file_name() // keep the order deterministic, because we overwrite files
         .into_iter()
         .filter_entry(|entry| !entry.path_is_symlink())
     {

@@ -57,7 +57,7 @@ fn almost_main() -> Result<(), MyError> {
     let mtime = fs::metadata(args.source_file.clone())?;
 
     for entry in WalkDir::new(Path::new(&args.destination_directory))
-        .sort_by_file_name() // keep the order deterministic, because we overwrite files
+        // .sort_by_file_name() // keep the order deterministic, because we overwrite files
         .into_iter()
     {
         let entry = entry?;
