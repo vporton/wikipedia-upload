@@ -91,11 +91,7 @@ def extract_zim(output_dir):
             for name in filenames:
                 source = os.path.join(root, name)
                 dest = re.sub(RE, r'\1', source).replace('/', '%2f')
-                if source == dest:
-                    continue
                 dest = f"{output_dir}/A/" + dest  # Be careful, it is used in rm -rf
-                if source == dest:  # need second check?
-                    continue
                 logger.info(f"{source} -> {dest}")
                 with open(source) as source_file:
                     text = source_file.read().replace(needle, repl)
