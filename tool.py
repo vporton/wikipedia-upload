@@ -83,8 +83,9 @@ def extract_zim(output_dir):
         run_command(f"rm -rf {output_dir}/X")  # Remove useless search indexes.
 
         logger.info("Correcting files with /...")
-        needle = r'<meta http-equiv="refresh" content="0;url=../'
-        repl   = r'<meta http-equiv="refresh" content="0;url='
+        # Binary strings to avoid decoding issues:
+        needle = rb'<meta http-equiv="refresh" content="0;url=../'
+        repl   = rb'<meta http-equiv="refresh" content="0;url='
         root = f"{output_dir}/_exceptions"
         RE = re.compile(r".*?A%2f([^/]+)$")
         for (_dirpath, _dirnames, filenames) in os.walk(root):
@@ -93,7 +94,7 @@ def extract_zim(output_dir):
                 dest = re.sub(RE, r'\1', source).replace('/', '%2f')
                 dest = f"{output_dir}/A/" + dest  # Be careful, it is used in rm -rf
                 logger.info(f"{source} -> {dest}")
-                with open(source) as source_file:
+                with open(source, 'rb') as source_file:
                     text = source_file.read().replace(needle, repl)
                     try:
                         os.system(f"rm -rf {quote(dest)}")
