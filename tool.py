@@ -88,9 +88,9 @@ def extract_zim(output_dir):
         repl   = rb'<meta http-equiv="refresh" content="0;url='
         root = f"{output_dir}/_exceptions"
         RE = re.compile(r".*?A%2f([^/]+)$")
-        for (_dirpath, _dirnames, filenames) in os.walk(root):
+        for (dirpath, _dirnames, filenames) in os.walk(root):
             for name in filenames:
-                source = os.path.join(root, name)
+                source = os.path.join(dirpath, name)
                 dest = re.sub(RE, r'\1', source).replace('/', '%2f')
                 dest = f"{output_dir}/A/" + dest  # Be careful, it is used in rm -rf
                 logger.info(f"{source} -> {dest}")
@@ -100,7 +100,7 @@ def extract_zim(output_dir):
                         os.system(f"rm -rf {quote(dest)}")
                     except NameError:
                         pass
-                    with open(dest, 'w') as dest_file:
+                    with open(dest, 'wb') as dest_file:
                         dest_file.write(text)
                 os.unlink(source)
 
