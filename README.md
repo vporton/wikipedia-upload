@@ -122,7 +122,7 @@ Open the uploaded hash (also stored in `uploads.log` in the current directory or
 location specified by `-L` option) to view.
 
 It has two buttons "Open article" and "Search". Search performs set intersection of
-indexes for typed words (searching subwords is not supported). Each index contains all
+indexes for typed words (searching subwords is not supported) in the _bodies_ of articles. Each index contains all
 pages with this exact word but no more pages that the value specified by `-m`, `--max-search-results`.
 
 You can also use a tightly specialized script `cron.py` to upload Wikipedia
