@@ -81,6 +81,10 @@ def extract_zim(output_dir):
                 f"/usr/local/bin/zimdump dump --dir=/out /in/input.zim")
         # TODO: Fix https://github.com/openzim/zim-tools/issues/303 and make Bee understand redirects, then add `--redirect` here:
         run_command(f"rm -rf {output_dir}/X")  # Remove useless search indexes.
+        try:
+            run_command(f"rm -f {output_dir}/_exceptions/X%2ftitle%2fxapian {output_dir}/_exceptions/X%2ffulltext%2fxapian")
+        except CommandError:
+            pass
 
         logger.info("Correcting files with /...")
         # Binary strings to avoid decoding issues:
