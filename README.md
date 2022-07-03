@@ -136,11 +136,13 @@ Here `<SOURCE-DIR>` is this directory, `<STATE-DIR>` directory stores the state 
 `en_all_maxi` (specifies which Wikipedia is uploaded), if `<FEED-TOPIC>` is present also upload to this Swarm
 feed topic.
 
+`cron.py` sets `--max-search-results` to 100.
+
 ### View files
 
-If files are not Brotli-compressed (so `cron.py` does), just open the BZZ URL.
+If files are not Brotli-compressed, just open the BZZ URL.
 
-If the files are Brotli-compressed, you can view them only through a special proxy:
+If the files are Brotli-compressed (so `cron.py` does), you can view them only through a special proxy:
 run it as
 ```
 ./proxy.sh
