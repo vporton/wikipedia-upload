@@ -46,7 +46,7 @@ def run_command(command):
         raise CommandError(command)
 
 # Without multiplying by 10 upload stalls.
-command = f"{source_dir}/tool.py -F {source_dir}/static -H -M '' -S -B -m 400 -u {url} upload " \
+command = f"{source_dir}/tool.py -F {source_dir}/static -H -M '' -S -B -m 100 -u {url} upload " \
     f"-s {10*30*24*3600} -I index.html -E error.html -L {state_dir}/uploads.log"
 if feed_topic:
     command += f" -D {quote(feed_topic)}"
