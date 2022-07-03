@@ -118,6 +118,7 @@ def extract_zim(output_dir):
                 f" /root/preparer/target/release/indexer -m {args.max_search_results} /volume/A /volume/search")
 
         if args.enhance_files:
+            logger.info("Adding file comments...")
             source = args.zim_url if args.zim_url else args.zim_file
             run_command(f"sum=`sha256sum {input_dir}/input.zim | awk '{{print $1}}'`; find {output_dir}/A -type f | "\
                 f"while read f; do {{ echo; echo \"<!--\"; echo {quote(source)} SHA256=$sum; echo {args.enhance_files_more}; echo \"-->\"; }} >> \"$f\"; done")
