@@ -102,7 +102,7 @@ fn almost_main() -> Result<(), MyError> {
     {
         let entry = entry?;
         if let Some(path) = entry.path().to_str() {
-            info!("{}", path);
+            info!("indexing {}", path);
         }
         if !entry.file_type().is_dir() {
             index_file(&entry.path(), &args)?;
