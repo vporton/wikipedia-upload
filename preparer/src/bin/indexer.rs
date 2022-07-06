@@ -9,7 +9,7 @@ use walkdir::WalkDir;
 use maplit::hashset;
 use regex::{Regex, Split};
 use clap::Parser;
-use log::{debug, error};
+use log::{debug, error, info};
 
 #[derive(Debug)]
 struct MyUnicodeError;
@@ -101,6 +101,9 @@ fn almost_main() -> Result<(), MyError> {
         .filter_entry(|entry| !entry.path_is_symlink())
     {
         let entry = entry?;
+        if let Some(path) = entry.path().to_str() {
+            info!("{}", path);
+        }
         if !entry.file_type().is_dir() {
             index_file(&entry.path(), &args)?;
         }
