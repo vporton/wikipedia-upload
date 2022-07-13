@@ -7,7 +7,7 @@ use std::path::{Path, StripPrefixError};
 use lazy_static::lazy_static;
 use walkdir::WalkDir;
 use maplit::hashset;
-use regex::{Regex, Split};
+use regex::Regex;
 use clap::Parser;
 use log::{debug, error, info};
 
@@ -143,7 +143,11 @@ fn index_file(path: &Path, args: &Args) -> Result<(), MyError> {
         .clean(&*cleaned)
         .to_string();
     let mut word_counts = HashMap::new();
-    for word in tokenize(cleaned.as_str()) {
+    lazy_static! {
+        static ref RE: Regex = Regex::new(r"\W").unwrap();
+        static ref RE2: Regex = Regex::new(r"[a-zA-Z]").unwrap();
+    }
+    for word in RE.split(cleaned.as_str()).filter(|w| RE2.is_match(w)) {
         if word.is_empty() {
             continue;
         }
@@ -167,11 +171,4 @@ fn index_file(path: &Path, args: &Args) -> Result<(), MyError> {
         }
     }
     Ok(())
-}
-
-fn tokenize(s: &str) -> Split {
-    lazy_static! {
-        static ref RE: Regex = Regex::new(r"\W").unwrap();
-    }
-    RE.split(s)
 }
