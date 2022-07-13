@@ -145,7 +145,7 @@ fn index_file(path: &Path, args: &Args) -> Result<(), MyError> {
     let mut word_counts = HashMap::new();
     lazy_static! {
         static ref RE: Regex = Regex::new(r"\W").unwrap();
-        static ref RE2: Regex = Regex::new(r"[a-zA-Z]").unwrap();
+        static ref RE2: Regex = Regex::new(r"^[a-zA-Z]+$").unwrap();
     }
     for word in RE.split(cleaned.as_str()).filter(|w| RE2.is_match(w)) {
         if word.is_empty() {
