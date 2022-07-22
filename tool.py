@@ -120,6 +120,8 @@ def extract_zim(output_dir):
         if args.enhance_files:
             logger.info("Adding file comments...")
             source = args.zim_url if args.zim_url else args.zim_file
+            # FIXME: Errors like
+            # sh: 1: cannot create /hdd/user/tmp/tmpfn1ux31c/A/DEV/hdd/user/tmp/tmpfn1ux31c/A/DEVNUL: Directory nonexistent
             run_command(f"sum=`sha256sum {input_dir}/input.zim | awk '{{print $1}}'`; find {output_dir}/A -type f | "\
                 f"while read f; do {{ echo; echo \"<!--\"; echo {quote(source)} SHA256=$sum; echo {args.enhance_files_more}; echo \"-->\"; }} >> \"$f\"; done")
 
